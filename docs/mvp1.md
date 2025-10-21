@@ -5,10 +5,11 @@ This MVP implements monthly profit share with a simplified scope to ship quickly
 - Basis: QuickBooks Net Income (accrual), monthly periods.
 - PS payouts expensed in QBO: added back via a single manual field per month (`ps_addback`).
 - Personal charges: monthly per-holder amounts. The total is added back to the pool and deducted from the respective holder only.
-- Owner draws: a single monthly number per month (`owner_draws`), subtracted from the pool for everyone (no schedules in MVP).
+- Owner salary: a single monthly number per month (`owner_salary`), subtracted from the pool for everyone (no schedules in MVP).
 - Shares: fixed per month per holder (no intra-month changes).
 - Negative payouts: zero floor; deficits carry forward to offset future months (no invoicing). Carry-forward is derived from the prior month, not user-entered.
 - Rounding: round half up to cents; reconcile rounding delta to the largest positive payout.
+- No period finalization/locking in MVP; periods remain editable.
 
 ## Calculation
 
@@ -17,14 +18,14 @@ Definitions for a period (month):
 - `net_income_qb`: Net Income from QBO (accrual) for the month.
 - `ps_addback`: manual number to add back PS payouts that were booked as expense in QBO.
 - `personal_charges[holder]`: monthly per-holder amounts (positive numbers) for this month.
-- `owner_draws`: total owner/off-book draws for the month, subtracted from the pool.
+- `owner_salary`: total owner salary/off-book draws for the month, subtracted from the pool.
 - `shares[holder]`: per-holder share count for the month.
 - `carry_forward_in[holder]`: deficit (positive number) carried into this month, derived from the prior month’s output (system-provided, not user input).
 
 Pool build-up:
 
 - `personal_addback_total = sum(personal_charges)`
-- `adjusted_pool = net_income_qb + ps_addback + personal_addback_total - owner_draws`
+- `adjusted_pool = net_income_qb + ps_addback + personal_addback_total - owner_salary`
 
 Per-holder:
 
@@ -42,7 +43,7 @@ Rounding:
 Notes:
 
 - Personal charges are added to the pool (so others are not penalized) and then deducted from the specific holder only.
-- Owner draws reduce the pool for everyone (as if expensed in QBO).
+- Owner salary reduces the pool for everyone (as if expensed in QBO).
 
 Validation:
 
