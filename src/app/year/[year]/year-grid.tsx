@@ -93,64 +93,45 @@ export default function YearGrid({
     return `m${mm}`;
   }, [highlightMonth]);
 
-  const pinnedTopRowData: GridRow[] = useMemo(() => {
-    const buildRow = (
-      id: string,
-      label: string,
-      selectors: {
-        shares?: (month: MonthSummary) => number | null;
-        personal?: (month: MonthSummary) => number | null;
-        payout?: (month: MonthSummary) => number | null;
-      },
-    ): GridRow => {
-      const row: GridRow = { id, label, type: "meta" };
-      let total = 0;
-      let hasValue = false;
-      monthFields.forEach(({ field, monthNumber }) => {
-        const month = monthMap.get(monthNumber);
-        const shareValue = selectors.shares && month ? selectors.shares(month) : null;
-        const personalValue = selectors.personal && month ? selectors.personal(month) : null;
-        const payoutValue = selectors.payout && month ? selectors.payout(month) : null;
-        row[`${field}_shares`] = shareValue;
-        row[`${field}_expenses`] = personalValue;
-        row[`${field}_payout`] = payoutValue;
-        if (payoutValue !== null && payoutValue !== undefined) {
-          total += payoutValue;
-          hasValue = true;
-        }
-      });
-      row.ytd = hasValue ? total : null;
-      return row;
-    };
+const aggregatedRows: GridRow[] = useMemo(() => {
+  const buildRow = (
+    id: string,
+    label: string,
+    selector: (month: MonthSummary) => number | null,
+  ): GridRow => {
+    const row: GridRow = { id, label, type: "meta" };
+    let total = 0;
+    let hasValue = false;
+    monthFields.forEach(({ field, monthNumber }) => {
+      const month = monthMap.get(monthNumber);
+      const value = month ? selector(month) : null;
+      row[field] = value;
+      if (value !== null && value !== undefined) {
+        total += value;
+        hasValue = true;
+      }
+    });
+    row.ytd = hasValue ? total : null;
+    return row;
+  };
 
-    return [
-      buildRow("netIncome", "Net income (QBO)", {
-        payout: (month) => month.netIncomeQB,
-      }),
-      buildRow("taxOptimizationReturn", "Tax optimization return", {
-        payout: (month) =>
-          month.taxOptimizationReturn !== null ? -month.taxOptimizationReturn : null,
-      }),
-      buildRow("psAddBack", "PS add-back", {
-        payout: (month) => month.psAddBack,
-      }),
-      buildRow("psPayoutAddBack", "PS payouts add-back", {
-        payout: (month) => month.psPayoutAddBack,
-      }),
-      buildRow("ownerSalary", "Owner salary", {
-        payout: (month) => (month.ownerSalary !== null ? -month.ownerSalary : null),
-      }),
-      buildRow("uncollectible", "Uncollectible", {
-        payout: (month) => (month.uncollectible !== null ? -month.uncollectible : null),
-      }),
-      buildRow("personalAddBack", "Personal add-back", {
-        personal: (month) => month.personalAddBackTotal,
-      }),
-      buildRow("adjustedPool", "Adjusted pool", {
-        payout: (month) => month.adjustedPool,
-      }),
-    ];
-  }, [monthFields, monthMap]);
+  return [
+    buildRow("netIncome", "Net income (QBO)", (month) => month.netIncomeQB),
+    buildRow("taxOptimizationReturn", "Tax optimization return", (month) =>
+      month.taxOptimizationReturn !== null ? -month.taxOptimizationReturn : null,
+    ),
+    buildRow("psAddBack", "PS add-back", (month) => month.psAddBack),
+    buildRow("psPayoutAddBack", "PS payouts add-back", (month) => month.psPayoutAddBack),
+    buildRow("ownerSalary", "Owner salary", (month) =>
+      month.ownerSalary !== null ? -month.ownerSalary : null,
+    ),
+    buildRow("uncollectible", "Uncollectible", (month) =>
+      month.uncollectible !== null ? -month.uncollectible : null,
+    ),
+    buildRow("personalAddBack", "Personal add-back", (month) => month.personalAddBackTotal),
+    buildRow("adjustedPool", "Adjusted pool", (month) => month.adjustedPool),
+  ];
+}, [monthFields, monthMap]);
 
   const shareholderRows: GridRow[] = useMemo(() => {
     return shareholders.map((holder) => {
@@ -230,9 +211,47 @@ export default function YearGrid({
     return row;
   }, [monthFields, monthMap, shareholders]);
 
-  const rowData = shareholderRows;
+  const aggregatedColumnDefs = useMemo<ColDef[]>(() => {
+    const metricCols = monthFields.map<ColDef>(({ field, label, monthNumber }) => ({
+      headerName: label,
+      field,
+      type: "numericColumn",
+      valueFormatter: (params: ValueFormatterParams) =>
+        formatCurrency(params.value as number | null | undefined),
+      cellClass: () =>
+        field === highlightField
+          ? "text-right cursor-pointer bg-[var(--brand-accent)]/10 font-semibold text-[var(--brand-primary)]"
+          : "text-right cursor-pointer text-[var(--brand-primary)]",
+      headerClass: "ag-header-brand",
+      width: 140,
+      colId: `month-${monthNumber}`,
+    }));
 
-  const columnDefs = useMemo<ColDef[]>(() => {
+    return [
+      {
+        headerName: "Metric",
+        field: "label",
+        pinned: "left",
+        lockPinned: true,
+        cellClass: "font-medium text-[var(--brand-primary)]",
+        headerClass: "ag-header-brand",
+        width: 220,
+      },
+      ...metricCols,
+      {
+        headerName: "YTD",
+        field: "ytd",
+        type: "numericColumn",
+        valueFormatter: (params: ValueFormatterParams) =>
+          formatCurrency(params.value as number | null | undefined),
+        cellClass: "text-right font-semibold text-[var(--brand-primary)]",
+        headerClass: "ag-header-brand",
+        width: 140,
+      },
+    ];
+  }, [monthFields, highlightField]);
+
+  const shareholderColumnDefs = useMemo<ColDef[]>(() => {
     const baseCols: ColDef[] = [
       {
         headerName: "Shareholder",
@@ -340,18 +359,30 @@ export default function YearGrid({
   );
 
   return (
-    <div className="ag-theme-quartz rounded-3xl border border-white/40 bg-white/95 p-3 shadow-xl">
-      <AgGridReact
-        rowData={rowData}
-        columnDefs={columnDefs}
-        defaultColDef={defaultColDef}
-        pinnedTopRowData={pinnedTopRowData}
-        pinnedBottomRowData={[totalRow]}
-        suppressMovableColumns
-        getRowClass={getRowClass}
-        domLayout="autoHeight"
-        onCellClicked={handleCellClicked}
-      />
+    <div className="space-y-8">
+      <div className="ag-theme-quartz rounded-3xl border border-white/40 bg-white/95 p-3 shadow-xl">
+        <AgGridReact
+          rowData={aggregatedRows}
+          columnDefs={aggregatedColumnDefs}
+          defaultColDef={defaultColDef}
+          suppressMovableColumns
+          getRowClass={getRowClass}
+          domLayout="autoHeight"
+          onCellClicked={handleCellClicked}
+        />
+      </div>
+      <div className="ag-theme-quartz rounded-3xl border border-white/40 bg-white/95 p-3 shadow-xl">
+        <AgGridReact
+          rowData={shareholderRows}
+          columnDefs={shareholderColumnDefs}
+          defaultColDef={defaultColDef}
+          pinnedBottomRowData={[totalRow]}
+          suppressMovableColumns
+          getRowClass={getRowClass}
+          domLayout="autoHeight"
+          onCellClicked={handleCellClicked}
+        />
+      </div>
     </div>
   );
 }
