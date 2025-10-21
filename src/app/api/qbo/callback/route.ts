@@ -1,0 +1,128 @@
+import { NextRequest, NextResponse } from "next/server";
+import {
+  decodeState,
+  exchangeCodeForTokens,
+  getQboConfig,
+  runProfitAndLossReport,
+  parseMonthlyNetIncome,
+} from "@/lib/qbo";
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const err = searchParams.get("error");
+    if (err) {
+      const desc = searchParams.get("error_description") ?? "";
+      return NextResponse.json(
+        { error: `OAuth error: ${err} ${desc}`.trim() },
+        { status: 400 },
+      );
+    }
+
+    const code = searchParams.get("code");
+    const stateParam = searchParams.get("state");
+    const realmId = searchParams.get("realmId");
+    if (!code || !stateParam || !realmId) {
+      return NextResponse.json(
+        { error: "Missing required callback parameters" },
+        { status: 400 },
+      );
+    }
+
+    const state = decodeState(stateParam);
+    const nonceCookie = req.cookies.get("qbo_oauth_nonce")?.value;
+    if (!nonceCookie || nonceCookie !== state.nonce) {
+      return NextResponse.json({ error: "Invalid OAuth state" }, { status: 400 });
+    }
+
+    // Hard lock to a single allowed realmId via env
+    const allowedRealmId = process.env.QBO_ALLOWED_REALMID;
+    if (!allowedRealmId) {
+      return NextResponse.json(
+        {
+          error:
+            `QBO_ALLOWED_REALMID is not set. Refusing to import. You can set it to '${realmId}' if this is the intended company.`,
+        },
+        { status: 403 },
+      );
+    }
+    if (realmId !== allowedRealmId) {
+      return NextResponse.json(
+        { error: `Realm mismatch. Expected ${allowedRealmId}, got ${realmId}. Import aborted.` },
+        { status: 403 },
+      );
+    }
+
+    const cfg = getQboConfig();
+    const token = await exchangeCodeForTokens(
+      code,
+      cfg.redirectUri,
+      cfg.clientId,
+      cfg.clientSecret,
+    );
+
+    // Avoid logging full tokens
+    console.log(
+      `QBO auth OK for realm ${realmId}, access ****${token.access_token.slice(-6)}`,
+    );
+
+    const report = await runProfitAndLossReport({
+      accessToken: token.access_token,
+      realmId,
+      year: state.year,
+      env: cfg.env,
+      minorVersion: cfg.minorVersion,
+    });
+    
+    // Parse Net Income by month and upsert into Period
+    const monthly = parseMonthlyNetIncome(report, state.year);
+
+    // Base owner salary: December of previous year, else default 30000 (per month)
+    const prevDecMonth = `${state.year - 1}-12`;
+    const prevDec = await prisma.period.findUnique({
+      where: { month: prevDecMonth },
+      select: { ownerSalary: true },
+    });
+    const baseOwnerSalary = prevDec?.ownerSalary
+      ? prevDec.ownerSalary.toString()
+      : "30000";
+
+    const results: { month: string; netIncomeQB: string; created: boolean }[] = [];
+    // Fetch all existing periods for the months in a single query
+    const months = Object.keys(monthly);
+    const existingPeriods = await prisma.period.findMany({
+      where: { month: { in: months } },
+      select: { month: true, id: true },
+    });
+    const existingMap = new Map(existingPeriods.map(p => [p.month, p]));
+    for (const [month, amount] of Object.entries(monthly)) {
+      const existing = existingMap.get(month);
+      await prisma.period.upsert({
+        where: { month },
+        update: { netIncomeQB: amount },
+        create: {
+          month,
+          netIncomeQB: amount,
+          psAddBack: "0",
+          ownerSalary: baseOwnerSalary,
+        },
+      });
+      results.push({ month, netIncomeQB: amount, created: !existing });
+    }
+
+    // Redirect back to the year page with a success indicator and counts for banner
+    const createdCount = results.filter((r) => r.created).length;
+    const updatedCount = results.length - createdCount;
+    const redirectTo = new URL(`${req.nextUrl.origin}/year/${state.year}`);
+    redirectTo.searchParams.set("importedYear", String(state.year));
+    redirectTo.searchParams.set("created", String(createdCount));
+    redirectTo.searchParams.set("updated", String(updatedCount));
+    return NextResponse.redirect(redirectTo);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

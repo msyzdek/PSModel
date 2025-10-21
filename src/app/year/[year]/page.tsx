@@ -7,6 +7,7 @@ import { calculatePeriod } from "@/lib/calculation";
 import { formatYearMonth, MONTH_NAMES, parseYearMonth } from "@/lib/date";
 import YearGrid from "./year-grid";
 import SavedMonthBanner from "./saved-month-banner";
+import ImportedYearBanner from "./imported-year-banner";
 
 export type SimplifiedShareholder = Pick<Shareholder, "id" | "name">;
 
@@ -163,6 +164,9 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
   const overview = await getYearOverview(parsedYear);
 
   const savedMonthParam = typeof resolvedSearchParams.savedMonth === "string" ? resolvedSearchParams.savedMonth : undefined;
+  const importedYearParam = typeof resolvedSearchParams.importedYear === "string" ? resolvedSearchParams.importedYear : undefined;
+  const createdParam = typeof resolvedSearchParams.created === "string" ? Number(resolvedSearchParams.created) : undefined;
+  const updatedParam = typeof resolvedSearchParams.updated === "string" ? Number(resolvedSearchParams.updated) : undefined;
   let savedMonthLabel: string | null = null;
   if (savedMonthParam) {
     try {
@@ -188,16 +192,31 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
               below to review or update detailed allocations.
             </p>
           </div>
-          <Link
-            href={`/month/${formatYearMonth(parsedYear, Math.min(new Date().getMonth() + 1, 12))}`}
-            className="inline-flex items-center justify-center rounded-full bg-[var(--brand-accent)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
-          >
-            Jump to Current Month
-          </Link>
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row">
+            <a
+              href={`/api/qbo/connect?year=${parsedYear}`}
+              className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-[var(--brand-primary)] shadow-lg transition hover:bg-white/90"
+            >
+              Import From QuickBooks
+            </a>
+            <Link
+              href={`/month/${formatYearMonth(parsedYear, Math.min(new Date().getMonth() + 1, 12))}`}
+              className="inline-flex items-center justify-center rounded-full bg-[var(--brand-accent)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
+            >
+              Jump to Current Month
+            </Link>
+          </div>
         </div>
       </section>
       {savedMonthLabel ? (
         <SavedMonthBanner savedMonth={savedMonthParam ?? null} label={savedMonthLabel} />
+      ) : null}
+      {importedYearParam ? (
+        <ImportedYearBanner
+          importedYear={importedYearParam ?? null}
+          created={Number.isFinite(createdParam as number) ? (createdParam as number) : null}
+          updated={Number.isFinite(updatedParam as number) ? (updatedParam as number) : null}
+        />
       ) : null}
       <YearGrid
         year={parsedYear}

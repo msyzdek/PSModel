@@ -1,0 +1,51 @@
+{
+  "Columns": {
+    "Column": [
+      { "ColTitle": "Account", "ColType": "Account" },
+      { "ColTitle": "Jan 2025", "ColType": "Money" },
+      { "ColTitle": "Feb 2025", "ColType": "Money" },
+      { "ColTitle": "Mar 2025", "ColType": "Money" },
+      { "ColTitle": "Apr 2025", "ColType": "Money" },
+      { "ColTitle": "May 2025", "ColType": "Money" },
+      { "ColTitle": "Jun 2025", "ColType": "Money" },
+      { "ColTitle": "Jul 2025", "ColType": "Money" },
+      { "ColTitle": "Aug 2025", "ColType": "Money" },
+      { "ColTitle": "Sep 2025", "ColType": "Money" },
+      { "ColTitle": "Oct 2025", "ColType": "Money" },
+      { "ColTitle": "Nov 2025", "ColType": "Money" },
+      { "ColTitle": "Dec 2025", "ColType": "Money" },
+      { "ColTitle": "Total", "ColType": "Money" }
+    ]
+  },
+  "Rows": {
+    "Row": [
+      {
+        "type": "Section",
+        "Header": { "ColData": [{ "value": "Profit and Loss" }] },
+        "Rows": {
+          "Row": [
+            {
+              "ColData": [
+                { "value": "Net Income" },
+                { "value": "100" },
+                { "value": "(50)" },
+                { "value": "—" },
+                { "value": "300.50" },
+                { "value": "0" },
+                { "value": "10" },
+                { "value": "20" },
+                { "value": "30" },
+                { "value": "40" },
+                { "value": "50" },
+                { "value": "60" },
+                { "value": "70" },
+                { "value": "630.50" }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+
