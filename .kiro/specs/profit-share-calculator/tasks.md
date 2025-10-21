@@ -8,22 +8,22 @@
   - Set up .env.example files for both backend and frontend
   - _Requirements: 8.4_
 
-- [ ] 2. Implement backend data models and database schema
-  - [ ] 2.1 Create SQLAlchemy models for MonthlyPeriod and HolderAllocation
+- [x] 2. Implement backend data models and database schema
+  - [x] 2.1 Create SQLAlchemy models for MonthlyPeriod and HolderAllocation
     - Define MonthlyPeriod model with all fields (year, month, net_income_qb, ps_addback, owner_draws, etc.)
     - Define HolderAllocation model with all fields (holder_name, shares, personal_charges, etc.)
     - Add relationships between models
     - Add unique constraint on (year, month) for MonthlyPeriod
     - _Requirements: 7.1, 7.2_
 
-  - [ ] 2.2 Create Pydantic schemas for API validation
+  - [x] 2.2 Create Pydantic schemas for API validation
     - Create PeriodInput schema with validation rules
     - Create HolderInput schema with validation rules
     - Create CalculationResult response schema
     - Create PeriodSummary response schema
     - _Requirements: 2.6, 2.7_
 
-  - [ ] 2.3 Set up database connection and migrations
+  - [x] 2.3 Set up database connection and migrations
     - Configure SQLAlchemy engine and session management
     - Create Alembic migration for initial schema
     - Add database initialization script
