@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
           month,
           netIncomeQB: amount,
           psAddBack: "0",
-          ownerSalary: baseOwnerSalary,
+          ownerSalary: isFirstYearImport ? baseOwnerSalary : "0",
         },
       });
       results.push({ month, netIncomeQB: amount, created: !existing });

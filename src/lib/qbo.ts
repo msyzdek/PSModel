@@ -174,7 +174,12 @@ type ReportRow = {
   Summary?: { ColData?: ColData[] };
 };
 
-export function parseMonthlyNetIncome(report: any, year: number): Record<string, string> {
+type Report = {
+  Rows?: { Row?: ReportRow[] };
+  Columns?: { Column?: { ColTitle?: string; ColType?: string }[] };
+};
+
+export function parseMonthlyNetIncome(report: Report, year: number): Record<string, string> {
   const rows: ReportRow[] = report?.Rows?.Row ?? [];
 
   function collectAllRows(r: ReportRow[]): ReportRow[] {
@@ -212,8 +217,10 @@ export function parseMonthlyNetIncome(report: any, year: number): Record<string,
 
   // Prefer using the report header to determine which columns map to months.
   // This avoids including the first "Account" column or the trailing "Total" column.
-  const headerColumns: { ColTitle?: string; ColType?: string }[] =
-    (report?.Columns?.Column as any[]) ?? [];
+  const rawCols = report?.Columns?.Column;
+  const headerColumns: { ColTitle?: string; ColType?: string }[] = Array.isArray(rawCols)
+    ? rawCols
+    : [];
 
   let monthIndexes: number[] = [];
   if (Array.isArray(headerColumns) && headerColumns.length > 0) {
