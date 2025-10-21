@@ -2,21 +2,8 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { PeriodInput } from '@/lib/types/period';
-
-const periodSchema = z.object({
-  year: z.number().int().min(2000).max(2100),
-  month: z.number().int().min(1).max(12),
-  net_income_qb: z.number(),
-  ps_addback: z.number(),
-  owner_draws: z.number(),
-  uncollectible: z.number(),
-  bad_debt: z.number(),
-  tax_optimization: z.number(),
-});
-
-type PeriodFormData = z.infer<typeof periodSchema>;
+import { periodSchema, PeriodFormData } from '@/lib/validation/schemas';
 
 interface PeriodFormProps {
   initialData?: Partial<PeriodInput>;
@@ -29,7 +16,7 @@ export function PeriodForm({ initialData, onSubmit, isSubmitting = false }: Peri
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<PeriodFormData>({
+  } = useForm({
     resolver: zodResolver(periodSchema),
     defaultValues: {
       year: initialData?.year ?? new Date().getFullYear(),

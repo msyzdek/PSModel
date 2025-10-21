@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.middleware.auth import CurrentUser
 from app.schemas.calculation import CalculationResult, HolderAllocationResult, PeriodData
-from app.schemas.period import HolderInput, PeriodInput, PeriodSummary
+from app.schemas.period import HolderInput, PeriodCreateRequest, PeriodInput, PeriodSummary
 from app.services.calculation_service import ProfitShareCalculationService
 from app.services.period_service import PeriodService
 
@@ -27,8 +27,7 @@ def get_calculation_service() -> ProfitShareCalculationService:
 
 @router.post("/calculate/preview", response_model=CalculationResult)
 def preview_calculation(
-    period_data: PeriodInput,
-    holders: list[HolderInput],
+    request: PeriodCreateRequest,
     service: Annotated[PeriodService, Depends(get_period_service)],
     calc_service: Annotated[
         ProfitShareCalculationService, Depends(get_calculation_service)
@@ -42,8 +41,7 @@ def preview_calculation(
     Useful for validating inputs and previewing results before committing.
 
     Args:
-        period_data: Period input data
-        holders: List of holder allocations
+        request: Period creation request with period data and holders
         service: Period service instance (for carry-forward lookup)
         calc_service: Calculation service instance
 
@@ -55,14 +53,14 @@ def preview_calculation(
     """
     try:
         # Get prior period for carry-forwards
-        prior_period = service.get_prior_period(period_data.year, period_data.month)
+        prior_period = service.get_prior_period(request.period.year, request.period.month)
         prior_carry_forwards = None
         if prior_period:
             prior_carry_forwards = service.holder_repo.find_carry_forwards(prior_period.id)
 
         # Run calculation without saving
         calc_result = calc_service.calculate_period(
-            period_data, holders, prior_carry_forwards
+            request.period, request.holders, prior_carry_forwards
         )
 
         return calc_result

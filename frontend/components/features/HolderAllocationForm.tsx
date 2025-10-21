@@ -4,15 +4,21 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { HolderInput } from '@/lib/types/period';
-
-const holderSchema = z.object({
-  holder_name: z.string().min(1, 'Holder name is required'),
-  shares: z.number().int().positive('Shares must be positive'),
-  personal_charges: z.number().min(0, 'Personal charges must be non-negative'),
-});
+import { holderSchema } from '@/lib/validation/schemas';
 
 const holdersFormSchema = z.object({
-  holders: z.array(holderSchema).min(1, 'At least one holder is required'),
+  holders: z
+    .array(holderSchema)
+    .min(1, 'At least one holder is required')
+    .refine(
+      (holders) => {
+        const names = holders.map((h) => h.holder_name.toLowerCase());
+        return names.length === new Set(names).size;
+      },
+      {
+        message: 'Holder names must be unique',
+      }
+    ),
 });
 
 type HoldersFormData = z.infer<typeof holdersFormSchema>;
@@ -35,7 +41,7 @@ export function HolderAllocationForm({
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<HoldersFormData>({
+  } = useForm({
     resolver: zodResolver(holdersFormSchema),
     defaultValues: {
       holders:

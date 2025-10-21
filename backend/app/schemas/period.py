@@ -1,8 +1,9 @@
 """Pydantic schemas for period input and summary."""
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
+from typing import List
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class PeriodInput(BaseModel):
@@ -27,6 +28,30 @@ class PeriodInput(BaseModel):
         """Validate that year and month are positive."""
         if v <= 0:
             raise ValueError("Value must be positive")
+        return v
+
+    @field_validator(
+        "net_income_qb",
+        "ps_addback",
+        "owner_draws",
+        "uncollectible",
+        "bad_debt",
+        "tax_optimization",
+    )
+    @classmethod
+    def validate_decimal_fields(cls, v: Decimal, info) -> Decimal:
+        """Validate that decimal fields are valid numbers."""
+        if v is None:
+            raise ValueError(f"{info.field_name} is required")
+        try:
+            # Ensure it's a valid Decimal
+            if not isinstance(v, Decimal):
+                v = Decimal(str(v))
+            # Check for NaN or Infinity
+            if v.is_nan() or v.is_infinite():
+                raise ValueError(f"{info.field_name} must be a valid number")
+        except (InvalidOperation, ValueError) as e:
+            raise ValueError(f"{info.field_name} must be a valid number") from e
         return v
 
     class Config:
@@ -59,9 +84,36 @@ class HolderInput(BaseModel):
     @classmethod
     def validate_holder_name(cls, v: str) -> str:
         """Validate holder name is not empty after stripping."""
-        if not v.strip():
+        if not v or not v.strip():
             raise ValueError("Holder name cannot be empty")
         return v.strip()
+
+    @field_validator("shares")
+    @classmethod
+    def validate_shares(cls, v: int) -> int:
+        """Validate shares are positive integers."""
+        if not isinstance(v, int):
+            raise ValueError("Shares must be an integer")
+        if v <= 0:
+            raise ValueError("Shares must be a positive integer")
+        return v
+
+    @field_validator("personal_charges")
+    @classmethod
+    def validate_personal_charges(cls, v: Decimal) -> Decimal:
+        """Validate personal charges are non-negative."""
+        if v is None:
+            raise ValueError("Personal charges is required")
+        try:
+            if not isinstance(v, Decimal):
+                v = Decimal(str(v))
+            if v.is_nan() or v.is_infinite():
+                raise ValueError("Personal charges must be a valid number")
+        except (InvalidOperation, ValueError) as e:
+            raise ValueError("Personal charges must be a valid number") from e
+        if v < 0:
+            raise ValueError("Personal charges must be non-negative")
+        return v
 
     class Config:
         """Pydantic config."""
@@ -73,6 +125,46 @@ class HolderInput(BaseModel):
                 "personal_charges": 500.00,
             }
         }
+
+
+class PeriodCreateRequest(BaseModel):
+    """Schema for creating a period with holders."""
+
+    period: PeriodInput = Field(..., description="Period input data")
+    holders: List[HolderInput] = Field(..., min_length=1, description="List of holder allocations")
+
+    @model_validator(mode="after")
+    def validate_period_and_holders(self) -> "PeriodCreateRequest":
+        """Validate the relationship between period data and holders."""
+        # Validate at least one holder is provided
+        if not self.holders or len(self.holders) == 0:
+            raise ValueError("At least one holder must be provided")
+
+        # Calculate adjusted pool to check if validation is needed
+        personal_addback_total = sum(
+            (h.personal_charges for h in self.holders), Decimal("0")
+        )
+        adjusted_pool = (
+            self.period.net_income_qb
+            + self.period.ps_addback
+            + personal_addback_total
+            - self.period.owner_draws
+            - self.period.uncollectible
+            - self.period.tax_optimization
+            + self.period.bad_debt
+        )
+
+        # Validate total_shares > 0 when adjusted_pool > 0
+        total_shares = sum(h.shares for h in self.holders)
+        if adjusted_pool > 0 and total_shares == 0:
+            raise ValueError("Total shares must be greater than 0 when adjusted pool is positive")
+
+        # Validate unique holder names
+        holder_names = [h.holder_name for h in self.holders]
+        if len(holder_names) != len(set(holder_names)):
+            raise ValueError("Holder names must be unique")
+
+        return self
 
 
 class PeriodSummary(BaseModel):

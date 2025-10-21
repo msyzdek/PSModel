@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.middleware.auth import CurrentUser
 from app.schemas.calculation import CalculationResult, HolderAllocationResult, PeriodData
-from app.schemas.period import HolderInput, PeriodInput, PeriodSummary
+from app.schemas.period import HolderInput, PeriodCreateRequest, PeriodInput, PeriodSummary
 from app.services.period_service import PeriodService
 
 router = APIRouter(prefix="/api/periods", tags=["periods"])
@@ -21,8 +21,7 @@ def get_period_service(db: Annotated[Session, Depends(get_db)]) -> PeriodService
 
 @router.post("", response_model=CalculationResult, status_code=status.HTTP_201_CREATED)
 def create_period(
-    period_data: PeriodInput,
-    holders: list[HolderInput],
+    request: PeriodCreateRequest,
     service: Annotated[PeriodService, Depends(get_period_service)],
     current_user: CurrentUser,
 ) -> CalculationResult:
@@ -30,8 +29,7 @@ def create_period(
     Create a new period with calculations.
 
     Args:
-        period_data: Period input data
-        holders: List of holder allocations
+        request: Period creation request with period data and holders
         service: Period service instance
 
     Returns:
@@ -41,7 +39,7 @@ def create_period(
         HTTPException: 400 if period already exists or validation fails
     """
     try:
-        period = service.create_period(period_data, holders)
+        period = service.create_period(request.period, request.holders)
 
         # Convert to CalculationResult
         return CalculationResult(
@@ -164,8 +162,7 @@ def get_period(
 def update_period(
     year: int,
     month: int,
-    period_data: PeriodInput,
-    holders: list[HolderInput],
+    request: PeriodCreateRequest,
     service: Annotated[PeriodService, Depends(get_period_service)],
     current_user: CurrentUser,
 ) -> CalculationResult:
@@ -175,8 +172,7 @@ def update_period(
     Args:
         year: Year of the period to update
         month: Month of the period to update
-        period_data: Updated period input data
-        holders: Updated list of holder allocations
+        request: Period update request with period data and holders
         service: Period service instance
 
     Returns:
@@ -186,7 +182,7 @@ def update_period(
         HTTPException: 404 if period not found, 400 if validation fails
     """
     try:
-        period = service.update_period(year, month, period_data, holders)
+        period = service.update_period(year, month, request.period, request.holders)
 
         return CalculationResult(
             period=PeriodData(
