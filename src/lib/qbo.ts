@@ -143,9 +143,7 @@ export type OauthState = { nonce: string; year: number };
 
 export function encodeState(state: OauthState): string {
   const json = JSON.stringify(state);
-  const b64 = Buffer.from(json).toString("base64");
-  // URL-safe
-  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  return Buffer.from(json).toString("base64url");
 }
 
 export function decodeState(s: string): OauthState {
