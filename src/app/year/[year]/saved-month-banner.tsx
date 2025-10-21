@@ -22,7 +22,10 @@ export default function SavedMonthBanner({ savedMonth, label }: SavedMonthBanner
       url.searchParams.delete("savedMonth");
       const nextUrl = `${url.pathname}${url.search}${url.hash}`;
       window.history.replaceState(null, "", nextUrl);
-    } catch {}
+    } catch (e) {
+      // Log the error to help with debugging URL manipulation issues
+      console.error("Error updating URL in SavedMonthBanner:", e);
+    }
   }, [label, savedMonth]);
 
   if (!visible || !label) {
