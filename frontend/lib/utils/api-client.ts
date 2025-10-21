@@ -36,7 +36,11 @@ async function apiFetch<T>(
   const { params, ...fetchOptions } = options;
 
   // Build URL with query parameters
-  let url = `${API_BASE_URL}${endpoint}`;
+  // Strip /api/ prefix from endpoint since proxy already adds it
+  const cleanEndpoint = endpoint.startsWith('/api/')
+    ? endpoint.substring(4)
+    : endpoint;
+  let url = `${API_BASE_URL}${cleanEndpoint}`;
   if (params) {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
