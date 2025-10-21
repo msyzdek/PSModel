@@ -188,12 +188,20 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
               below to review or update detailed allocations.
             </p>
           </div>
-          <Link
-            href={`/month/${formatYearMonth(parsedYear, Math.min(new Date().getMonth() + 1, 12))}`}
-            className="inline-flex items-center justify-center rounded-full bg-[var(--brand-accent)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
-          >
-            Jump to Current Month
-          </Link>
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row">
+            <Link
+              href={`/api/qbo/connect?year=${parsedYear}`}
+              className="inline-flex items-center justify-center rounded-full bg-white/15 px-6 py-3 text-sm font-semibold text-white shadow-lg ring-1 ring-white/25 transition hover:bg-white/25"
+            >
+              Import From QuickBooks
+            </Link>
+            <Link
+              href={`/month/${formatYearMonth(parsedYear, Math.min(new Date().getMonth() + 1, 12))}`}
+              className="inline-flex items-center justify-center rounded-full bg-[var(--brand-accent)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
+            >
+              Jump to Current Month
+            </Link>
+          </div>
         </div>
       </section>
       {savedMonthLabel ? (
