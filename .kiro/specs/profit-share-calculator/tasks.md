@@ -115,21 +115,21 @@
     - Configure allowed methods and headers
     - _Requirements: 8.1, 8.2, 8.3_
 
-- [ ] 7. Implement frontend data layer
-  - [ ] 7.1 Create API client utilities
+- [x] 7. Implement frontend data layer
+  - [x] 7.1 Create API client utilities
     - Create base fetch wrapper with error handling
     - Create typed API client functions for all endpoints
     - Add request/response interceptors
     - _Requirements: 7.3_
 
-  - [ ] 7.2 Create TypeScript types
+  - [x] 7.2 Create TypeScript types
     - Define PeriodInput interface
     - Define HolderInput interface
     - Define CalculationResult interface
     - Define PeriodSummary interface
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-  - [ ] 7.3 Create custom hooks
+  - [x] 7.3 Create custom hooks
     - Create usePeriod hook for fetching period data
     - Create usePeriods hook for listing periods
     - Create useCreatePeriod mutation hook
