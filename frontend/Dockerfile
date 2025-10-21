@@ -23,6 +23,10 @@ COPY . .
 # Set environment variable for build
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Accept build arg and set as environment variable
+ARG NEXT_PUBLIC_API_URL=http://localhost:8000
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Build the application
 RUN npm run build
 

@@ -138,6 +138,12 @@ def get_period(
         period=PeriodData(
             year=period.year,
             month=period.month,
+            net_income_qb=period.net_income_qb,
+            ps_addback=period.ps_addback,
+            owner_draws=period.owner_draws,
+            uncollectible=period.uncollectible,
+            bad_debt=period.bad_debt,
+            tax_optimization=period.tax_optimization,
             adjusted_pool=period.adjusted_pool,
             total_shares=period.total_shares,
             rounding_delta=period.rounding_delta,

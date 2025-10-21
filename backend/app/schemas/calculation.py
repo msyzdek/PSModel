@@ -42,6 +42,12 @@ class PeriodData(BaseModel):
 
     year: int = Field(..., description="Year of the period")
     month: int = Field(..., description="Month of the period")
+    net_income_qb: Decimal = Field(..., description="QuickBooks Net Income")
+    ps_addback: Decimal = Field(..., description="PS payout add-back")
+    owner_draws: Decimal = Field(..., description="Total owner draws")
+    uncollectible: Decimal = Field(default=Decimal("0"), description="Uncollectible income")
+    bad_debt: Decimal = Field(default=Decimal("0"), description="Bad debt")
+    tax_optimization: Decimal = Field(default=Decimal("0"), description="Tax optimization return")
     adjusted_pool: Decimal = Field(..., description="Adjusted profit pool")
     total_shares: int = Field(..., description="Total shares across all holders")
     rounding_delta: Decimal = Field(..., description="Rounding adjustment applied")
@@ -53,6 +59,12 @@ class PeriodData(BaseModel):
             "example": {
                 "year": 2024,
                 "month": 1,
+                "net_income_qb": 100000.00,
+                "ps_addback": 5000.00,
+                "owner_draws": 10000.00,
+                "uncollectible": 0.00,
+                "bad_debt": 0.00,
+                "tax_optimization": 0.00,
                 "adjusted_pool": 95000.00,
                 "total_shares": 1000,
                 "rounding_delta": 0.02,
