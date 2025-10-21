@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Shareholder {
+  id        String             @id @default(cuid())
+  name      String
+  email     String?            @unique
+  active    Boolean            @default(true)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  shareAllocations ShareAllocation[]
+  personalCharges  PersonalCharge[]
+}
+
+model Period {
+  id           String            @id @default(cuid())
+  month        String            @unique // format YYYY-MM
+  netIncomeQB  Decimal
+  psAddBack    Decimal
+  ownerSalary  Decimal
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  shareAllocations ShareAllocation[]
+  personalCharges  PersonalCharge[]
+}
+
+model ShareAllocation {
+  id             String   @id @default(cuid())
+  periodId       String
+  shareholderId  String
+  shares         Decimal
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  period      Period      @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  shareholder Shareholder @relation(fields: [shareholderId], references: [id], onDelete: Cascade)
+
+  @@unique([periodId, shareholderId])
+}
+
+model PersonalCharge {
+  id            String   @id @default(cuid())
+  periodId      String
+  shareholderId String
+  amount        Decimal
+  memo          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  period      Period      @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  shareholder Shareholder @relation(fields: [shareholderId], references: [id], onDelete: Cascade)
+
+  @@unique([periodId, shareholderId])
+}
