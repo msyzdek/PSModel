@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { Button, ErrorMessage, NumberInput } from '@/components/ui';
+import { Button, ErrorMessage } from '@/components/ui';
 import type { Holder, HolderFormData } from '@/lib/types/holder';
 
 interface HolderFormProps {
