@@ -38,6 +38,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Invalid OAuth state" }, { status: 400 });
     }
 
+    // Hard lock to a single allowed realmId via env
+    const allowedRealmId = process.env.QBO_ALLOWED_REALMID;
+    if (!allowedRealmId) {
+      return NextResponse.json(
+        {
+          error:
+            `QBO_ALLOWED_REALMID is not set. Refusing to import. You can set it to '${realmId}' if this is the intended company.`,
+        },
+        { status: 403 },
+      );
+    }
+    if (realmId !== allowedRealmId) {
+      return NextResponse.json(
+        { error: `Realm mismatch. Expected ${allowedRealmId}, got ${realmId}. Import aborted.` },
+        { status: 403 },
+      );
+    }
+
     const cfg = getQboConfig();
     const token = await exchangeCodeForTokens(
       code,

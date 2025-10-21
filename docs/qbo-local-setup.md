@@ -37,6 +37,7 @@ QBO_CLIENT_SECRET=your_dev_client_secret
 QBO_REDIRECT_URI=http://localhost:3000/api/qbo/callback
 QBO_ENV=sandbox
 # QBO_MINOR_VERSION=75   # optional; omit to use default
+QBO_ALLOWED_REALMID=your_company_realm_id
 ```
 
 Also ensure your database URL is set (example for SQLite):
@@ -48,6 +49,7 @@ DATABASE_URL="file:./prisma/dev.db"
 Notes
 - Redirect URI must match Intuit app settings exactly (scheme/host/path).
 - Use Development keys with the sandbox company. Production keys work only with a production QBO company.
+- The app refuses to import unless `QBO_ALLOWED_REALMID` matches the realmId returned by Intuit. Set it once to lock the integration to your company. You can find the realmId in the callback URL the first time you connect or in QBO under Company ID.
 
 ## 4) Start the app
 
@@ -88,4 +90,3 @@ Approve the QuickBooks authorization for your sandbox company. You will be redir
 - Report response is returned as raw JSON; no parsing into monthly net income yet.
 
 If you need multi‑company or multi‑ledger support in the future, we can discuss token storage, refresh flows, and parsing into your Prisma models.
-
