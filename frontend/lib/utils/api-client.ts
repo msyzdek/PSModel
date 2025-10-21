@@ -54,6 +54,7 @@ async function apiFetch<T>(
     const response = await fetch(url, {
       ...fetchOptions,
       headers,
+      credentials: 'include', // Include cookies for authentication
     });
 
     // Response interceptor - handle errors

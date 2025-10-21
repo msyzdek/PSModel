@@ -205,22 +205,22 @@
     - Style with Tailwind CSS
     - _Requirements: 10.1, 10.4_
 
-- [ ] 10. Implement authentication (MVP)
-  - [ ] 10.1 Create simple admin authentication
+- [x] 10. Implement authentication (MVP)
+  - [x] 10.1 Create simple admin authentication
     - Add admin credentials to environment variables
     - Create login endpoint in backend
     - Implement session-based auth with JWT
     - Add auth middleware to protect endpoints
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-  - [ ] 10.2 Create login page
+  - [x] 10.2 Create login page
     - Build login form with username/password
     - Handle authentication errors
     - Redirect to dashboard on success
     - Store auth token in httpOnly cookie
     - _Requirements: 8.1, 8.2, 8.3_
 
-  - [ ] 10.3 Add auth protection to frontend
+  - [x] 10.3 Add auth protection to frontend
     - Create auth context/provider
     - Protect routes with auth check
     - Redirect to login if not authenticated

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.middleware.auth import CurrentUser
 from app.schemas.calculation import CalculationResult, HolderAllocationResult, PeriodData
 from app.schemas.period import HolderInput, PeriodInput, PeriodSummary
 from app.services.period_service import PeriodService
@@ -23,6 +24,7 @@ def create_period(
     period_data: PeriodInput,
     holders: list[HolderInput],
     service: Annotated[PeriodService, Depends(get_period_service)],
+    current_user: CurrentUser,
 ) -> CalculationResult:
     """
     Create a new period with calculations.
@@ -72,6 +74,7 @@ def create_period(
 def list_periods(
     limit: int = 12,
     service: Annotated[PeriodService, Depends(get_period_service)],
+    current_user: CurrentUser,
 ) -> list[PeriodSummary]:
     """
     List all periods ordered by most recent first.
@@ -110,6 +113,7 @@ def get_period(
     year: int,
     month: int,
     service: Annotated[PeriodService, Depends(get_period_service)],
+    current_user: CurrentUser,
 ) -> CalculationResult:
     """
     Get a specific period by year and month.
@@ -163,6 +167,7 @@ def update_period(
     period_data: PeriodInput,
     holders: list[HolderInput],
     service: Annotated[PeriodService, Depends(get_period_service)],
+    current_user: CurrentUser,
 ) -> CalculationResult:
     """
     Update an existing period and recalculate.
@@ -217,6 +222,7 @@ def delete_period(
     year: int,
     month: int,
     service: Annotated[PeriodService, Depends(get_period_service)],
+    current_user: CurrentUser,
 ) -> None:
     """
     Delete a period.

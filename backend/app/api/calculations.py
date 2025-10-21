@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.middleware.auth import CurrentUser
 from app.schemas.calculation import CalculationResult, HolderAllocationResult, PeriodData
 from app.schemas.period import HolderInput, PeriodInput, PeriodSummary
 from app.services.calculation_service import ProfitShareCalculationService
@@ -32,6 +33,7 @@ def preview_calculation(
     calc_service: Annotated[
         ProfitShareCalculationService, Depends(get_calculation_service)
     ],
+    current_user: CurrentUser,
 ) -> CalculationResult:
     """
     Preview calculation without saving to database.
@@ -78,6 +80,7 @@ def get_period_summary(
     year: int,
     month: int,
     service: Annotated[PeriodService, Depends(get_period_service)],
+    current_user: CurrentUser,
 ) -> dict:
     """
     Get comprehensive period summary report.

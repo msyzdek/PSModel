@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePeriods } from '@/lib/hooks/usePeriods';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -40,7 +41,8 @@ export default function Home() {
   const latestPeriod = periods.length > 0 ? periods[0] : null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <ProtectedRoute>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Profit Share Calculator</h1>
@@ -248,6 +250,7 @@ export default function Home() {
           </table>
         </div>
       )}
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }
