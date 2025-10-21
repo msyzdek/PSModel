@@ -174,15 +174,15 @@
     - Create LoadingSpinner component
     - _Requirements: 2.6, 2.7_
 
-- [ ] 9. Implement frontend pages
-  - [ ] 9.1 Create dashboard page (/)
+- [x] 9. Implement frontend pages
+  - [x] 9.1 Create dashboard page (/)
     - Display list of recent periods in table
     - Show quick stats (total periods, latest period)
     - Add navigation to create new period
     - Add navigation to view existing periods
     - _Requirements: 10.1, 10.2_
 
-  - [ ] 9.2 Create period entry page (/period/[year]/[month])
+  - [x] 9.2 Create period entry page (/period/[year]/[month])
     - Integrate PeriodForm component
     - Integrate HolderAllocationForm component
     - Handle form submission to API
@@ -191,14 +191,14 @@
     - Load existing data for edit mode
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 10.2_
 
-  - [ ] 9.3 Create period summary page (/period/[year]/[month]/summary)
+  - [x] 9.3 Create period summary page (/period/[year]/[month]/summary)
     - Integrate CalculationSummary component
     - Fetch period data from API
     - Add edit button to return to entry page
     - Add navigation to other periods
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 10.1, 10.2_
 
-  - [ ] 9.4 Create layout and navigation
+  - [x] 9.4 Create layout and navigation
     - Create root layout with header
     - Add navigation menu
     - Add PeriodNavigator to header
