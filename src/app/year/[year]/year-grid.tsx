@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AllCommunityModule,
   ModuleRegistry,
@@ -85,12 +85,24 @@ export default function YearGrid({
     months.forEach((month) => map.set(month.month, month));
     return map;
   }, [months]);
-  const highlightField = useMemo(() => {
-    if (!highlightMonth) return null;
+  const [activeHighlightField, setActiveHighlightField] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!highlightMonth) {
+      setActiveHighlightField(null);
+      return;
+    }
     const parts = highlightMonth.split("-");
-    if (parts.length !== 2) return null;
-    const mm = parts[1];
-    return `m${mm}`;
+    if (parts.length !== 2) {
+      setActiveHighlightField(null);
+      return;
+    }
+    const field = `m${parts[1]}`;
+    setActiveHighlightField(field);
+    const timeout = setTimeout(() => {
+      setActiveHighlightField(null);
+    }, 5000);
+    return () => clearTimeout(timeout);
   }, [highlightMonth]);
 
 const aggregatedRows: GridRow[] = useMemo(() => {
@@ -187,11 +199,8 @@ const aggregatedRows: GridRow[] = useMemo(() => {
         return;
       }
 
-      const totalShares = Object.values(month.shares).reduce(
-        (acc, value) => acc + (value ?? 0),
-        0,
-      );
-      const totalPersonal = Object.values(month.personalExpenses).reduce(
+      const totalShares = Object.values(month.shares).reduce<number>((acc, value) => acc + (value ?? 0), 0);
+      const totalPersonal = Object.values(month.personalExpenses).reduce<number>(
         (acc, value) => acc + (value ?? 0),
         0,
       );
@@ -219,8 +228,8 @@ const aggregatedRows: GridRow[] = useMemo(() => {
       valueFormatter: (params: ValueFormatterParams) =>
         formatCurrency(params.value as number | null | undefined),
       cellClass: () =>
-        field === highlightField
-          ? "text-right cursor-pointer bg-[var(--brand-accent)]/10 font-semibold text-[var(--brand-primary)]"
+        activeHighlightField && field === activeHighlightField
+          ? "text-right cursor-pointer highlight-cell font-semibold text-[var(--brand-primary)]"
           : "text-right cursor-pointer text-[var(--brand-primary)]",
       headerClass: "ag-header-brand",
       width: 140,
@@ -249,7 +258,7 @@ const aggregatedRows: GridRow[] = useMemo(() => {
         width: 140,
       },
     ];
-  }, [monthFields, highlightField]);
+  }, [monthFields, activeHighlightField]);
 
   const shareholderColumnDefs = useMemo<ColDef[]>(() => {
     const baseCols: ColDef[] = [
@@ -275,7 +284,10 @@ const aggregatedRows: GridRow[] = useMemo(() => {
           type: "numericColumn",
           valueFormatter: (params: ValueFormatterParams) =>
             formatShares(params.value as number | null | undefined),
-          cellClass: "text-right text-[var(--brand-primary)]",
+          cellClass: () =>
+            activeHighlightField && field === activeHighlightField
+              ? "text-right highlight-cell text-[var(--brand-primary)]"
+              : "text-right text-[var(--brand-primary)]",
           headerClass: "ag-header-brand",
           width: 110,
           colId: `month-${monthNumber}-shares`,
@@ -286,7 +298,10 @@ const aggregatedRows: GridRow[] = useMemo(() => {
           type: "numericColumn",
           valueFormatter: (params: ValueFormatterParams) =>
             formatCurrency(params.value as number | null | undefined),
-          cellClass: "text-right text-[var(--brand-primary)]",
+          cellClass: () =>
+            activeHighlightField && field === activeHighlightField
+              ? "text-right highlight-cell text-[var(--brand-primary)]"
+              : "text-right text-[var(--brand-primary)]",
           headerClass: "ag-header-brand",
           width: 130,
           colId: `month-${monthNumber}-expenses`,
@@ -298,8 +313,8 @@ const aggregatedRows: GridRow[] = useMemo(() => {
           valueFormatter: (params: ValueFormatterParams) =>
             formatCurrency(params.value as number | null | undefined),
           cellClass: () =>
-            field === highlightField
-              ? "text-right cursor-pointer bg-[var(--brand-accent)]/10 font-semibold text-[var(--brand-primary)]"
+            activeHighlightField && field === activeHighlightField
+              ? "text-right cursor-pointer highlight-cell font-semibold text-[var(--brand-primary)]"
               : "text-right cursor-pointer text-[var(--brand-primary)]",
           headerClass: "ag-header-brand",
           width: 130,
@@ -320,7 +335,7 @@ const aggregatedRows: GridRow[] = useMemo(() => {
     };
 
     return [...baseCols, ...monthCols, totalCol];
-  }, [monthFields, highlightField]);
+  }, [monthFields, activeHighlightField]);
 
   const defaultColDef = useMemo<ColDef>(
     () => ({

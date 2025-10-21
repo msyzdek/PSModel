@@ -7,6 +7,8 @@
   --brand-primary-light: #143d6b;
   --brand-accent: #ff6f3c;
   --brand-muted: #e0e6f0;
+  --highlight-strong: rgba(255, 111, 60, 0.24);
+  --highlight-soft: rgba(255, 111, 60, 0.08);
   --card-bg: linear-gradient(180deg, #ffffff 0%, #f3f6fb 100%);
 }
 
@@ -34,4 +36,22 @@ body {
 
 .ag-theme-quartz .ag-header {
   background: transparent;
+}
+
+@keyframes highlightFade {
+  0% {
+    background-color: var(--highlight-strong);
+  }
+  70% {
+    background-color: var(--highlight-soft);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.ag-theme-quartz .highlight-cell {
+  background-color: var(--highlight-strong);
+  animation: highlightFade 5s ease forwards;
+  transition: background-color 0.3s ease;
 }
