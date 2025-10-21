@@ -1,0 +1,112 @@
+{
+  "metadata": {
+    "month": "2025-01",
+    "generatedAt": "2025-10-21T11:01:36.913Z"
+  },
+  "input": {
+    "netIncomeQB": 365751.69,
+    "psAddBack": 0,
+    "ownerSalary": 30000,
+    "taxOptimizationReturn": 200000,
+    "uncollectible": 283.96,
+    "psPayoutAddBack": 0,
+    "shares": [
+      {
+        "shareholderId": "colin.strasser@montrosesoftware.com",
+        "shares": 125
+      },
+      {
+        "shareholderId": "michal.fronczyk@montrosesoftware.com",
+        "shares": 125
+      },
+      {
+        "shareholderId": "miroslaw.syzdek@montrosesoftware.com",
+        "shares": 125
+      },
+      {
+        "shareholderId": "marek.krzynowek@montrosesoftware.com",
+        "shares": 125
+      },
+      {
+        "shareholderId": "filip.korski@montrosesoftware.com",
+        "shares": 7
+      },
+      {
+        "shareholderId": "maria.gacek@montrosesoftware.com",
+        "shares": 3
+      },
+      {
+        "shareholderId": "piotr.pilip@montrosesoftware.com",
+        "shares": 5
+      },
+      {
+        "shareholderId": "olha.hnatiuk@montrosesoftware.com",
+        "shares": 7
+      },
+      {
+        "shareholderId": "krzysztof.biedron@montrosesoftware.com",
+        "shares": 5
+      },
+      {
+        "shareholderId": "dominika.szczygiel@montrosesoftware.com",
+        "shares": 2
+      },
+      {
+        "shareholderId": "karol.kucharczyk@montrosesoftware.com",
+        "shares": 2
+      },
+      {
+        "shareholderId": "adrian.szyndler@montrosesoftware.com",
+        "shares": 2
+      },
+      {
+        "shareholderId": "michal.grudzinski@montrosesoftware.com",
+        "shares": 2
+      },
+      {
+        "shareholderId": "dawid.tan@montrosesoftware.com",
+        "shares": 2
+      },
+      {
+        "shareholderId": "alicja.brajner@montrosesoftware.com",
+        "shares": 2
+      },
+      {
+        "shareholderId": "maciej.zarych@montrosesoftware.com",
+        "shares": 0
+      }
+    ],
+    "personalCharges": [
+      {
+        "shareholderId": "colin.strasser@montrosesoftware.com",
+        "amount": 2511.21
+      }
+    ],
+    "carryForwardIn": {}
+  },
+  "expected": {
+    "adjustedPool": 137978.94,
+    "personalAddBackTotal": 2511.21,
+    "totalShares": 539,
+    "actualRoundedTotal": 135467.73,
+    "roundingDelta": 0.01,
+    "payouts": {
+      "colin.strasser@montrosesoftware.com": 29487.62,
+      "michal.fronczyk@montrosesoftware.com": 31998.83,
+      "miroslaw.syzdek@montrosesoftware.com": 31998.83,
+      "marek.krzynowek@montrosesoftware.com": 31998.84,
+      "filip.korski@montrosesoftware.com": 1791.93,
+      "maria.gacek@montrosesoftware.com": 767.97,
+      "piotr.pilip@montrosesoftware.com": 1279.95,
+      "olha.hnatiuk@montrosesoftware.com": 1791.93,
+      "krzysztof.biedron@montrosesoftware.com": 1279.95,
+      "dominika.szczygiel@montrosesoftware.com": 511.98,
+      "karol.kucharczyk@montrosesoftware.com": 511.98,
+      "adrian.szyndler@montrosesoftware.com": 511.98,
+      "michal.grudzinski@montrosesoftware.com": 511.98,
+      "dawid.tan@montrosesoftware.com": 511.98,
+      "alicja.brajner@montrosesoftware.com": 511.98,
+      "maciej.zarych@montrosesoftware.com": 0
+    }
+  }
+}
