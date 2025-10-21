@@ -21,6 +21,8 @@ export type MonthSummary = {
   personalAddBackTotal: number | null;
   adjustedPool: number | null;
   payouts: Record<string, number | null>;
+  shares: Record<string, number | null>;
+  personalExpenses: Record<string, number | null>;
 };
 
 interface YearOverviewData {
@@ -68,8 +70,17 @@ async function getYearOverview(year: number): Promise<YearOverviewData> {
     });
 
     const payouts: Record<string, number> = {};
+    const sharesMap: Record<string, number> = {};
+    const personalExpensesMap: Record<string, number> = {};
+
     result.rows.forEach((row) => {
       payouts[row.shareholderId] = row.payoutRounded;
+    });
+    period.shareAllocations.forEach((allocation) => {
+      sharesMap[allocation.shareholderId] = Number(allocation.shares);
+    });
+    period.personalCharges.forEach((charge) => {
+      personalExpensesMap[charge.shareholderId] = Number(charge.amount);
     });
 
     if (periodYear === year) {
@@ -85,6 +96,8 @@ async function getYearOverview(year: number): Promise<YearOverviewData> {
         personalAddBackTotal: result.personalAddBackTotal,
         adjustedPool: result.adjustedPool,
         payouts,
+        shares: sharesMap,
+        personalExpenses: personalExpensesMap,
       });
     }
 
@@ -122,6 +135,8 @@ async function getYearOverview(year: number): Promise<YearOverviewData> {
       personalAddBackTotal: null,
       adjustedPool: null,
       payouts: {},
+      shares: {},
+      personalExpenses: {},
     };
   });
 

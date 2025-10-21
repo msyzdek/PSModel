@@ -37,11 +37,23 @@ const currency = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
 
+const sharesFormatter = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 4,
+});
+
 const formatCurrency = (value: number | null | undefined): string => {
   if (value === null || value === undefined) {
     return "—";
   }
   return currency.format(value);
+};
+
+const formatShares = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) {
+    return "—";
+  }
+  return sharesFormatter.format(value);
 };
 
 interface YearGridProps {
@@ -85,17 +97,25 @@ export default function YearGrid({
     const buildRow = (
       id: string,
       label: string,
-      selector: (month: MonthSummary) => number | null,
+      selectors: {
+        shares?: (month: MonthSummary) => number | null;
+        personal?: (month: MonthSummary) => number | null;
+        payout?: (month: MonthSummary) => number | null;
+      },
     ): GridRow => {
       const row: GridRow = { id, label, type: "meta" };
       let total = 0;
       let hasValue = false;
       monthFields.forEach(({ field, monthNumber }) => {
         const month = monthMap.get(monthNumber);
-        const value = month ? selector(month) : null;
-        row[field] = value;
-        if (value !== null && value !== undefined) {
-          total += value;
+        const shareValue = selectors.shares && month ? selectors.shares(month) : null;
+        const personalValue = selectors.personal && month ? selectors.personal(month) : null;
+        const payoutValue = selectors.payout && month ? selectors.payout(month) : null;
+        row[`${field}_shares`] = shareValue;
+        row[`${field}_expenses`] = personalValue;
+        row[`${field}_payout`] = payoutValue;
+        if (payoutValue !== null && payoutValue !== undefined) {
+          total += payoutValue;
           hasValue = true;
         }
       });
@@ -104,32 +124,31 @@ export default function YearGrid({
     };
 
     return [
-      buildRow("netIncome", "Net income (QBO)", (month) => month.netIncomeQB),
-      buildRow(
-        "taxOptimizationReturn",
-        "Tax optimization return",
-        (month) => (month.taxOptimizationReturn !== null ? -month.taxOptimizationReturn : null),
-      ),
-      buildRow("psAddBack", "PS add-back", (month) => month.psAddBack),
-      buildRow(
-        "psPayoutAddBack",
-        "PS payouts add-back",
-        (month) => month.psPayoutAddBack,
-      ),
-      buildRow("ownerSalary", "Owner salary", (month) =>
-        month.ownerSalary !== null ? -month.ownerSalary : null,
-      ),
-      buildRow(
-        "uncollectible",
-        "Uncollectible",
-        (month) => (month.uncollectible !== null ? -month.uncollectible : null),
-      ),
-      buildRow(
-        "personalAddBack",
-        "Personal add-back",
-        (month) => month.personalAddBackTotal,
-      ),
-      buildRow("adjustedPool", "Adjusted pool", (month) => month.adjustedPool),
+      buildRow("netIncome", "Net income (QBO)", {
+        payout: (month) => month.netIncomeQB,
+      }),
+      buildRow("taxOptimizationReturn", "Tax optimization return", {
+        payout: (month) =>
+          month.taxOptimizationReturn !== null ? -month.taxOptimizationReturn : null,
+      }),
+      buildRow("psAddBack", "PS add-back", {
+        payout: (month) => month.psAddBack,
+      }),
+      buildRow("psPayoutAddBack", "PS payouts add-back", {
+        payout: (month) => month.psPayoutAddBack,
+      }),
+      buildRow("ownerSalary", "Owner salary", {
+        payout: (month) => (month.ownerSalary !== null ? -month.ownerSalary : null),
+      }),
+      buildRow("uncollectible", "Uncollectible", {
+        payout: (month) => (month.uncollectible !== null ? -month.uncollectible : null),
+      }),
+      buildRow("personalAddBack", "Personal add-back", {
+        personal: (month) => month.personalAddBackTotal,
+      }),
+      buildRow("adjustedPool", "Adjusted pool", {
+        payout: (month) => month.adjustedPool,
+      }),
     ];
   }, [monthFields, monthMap]);
 
@@ -146,13 +165,21 @@ export default function YearGrid({
       monthFields.forEach(({ field, monthNumber }) => {
         const month = monthMap.get(monthNumber);
         if (!month || !month.hasData) {
-          row[field] = null;
+          row[`${field}_shares`] = null;
+          row[`${field}_expenses`] = null;
+          row[`${field}_payout`] = null;
           return;
         }
 
-        const value = month.payouts[holder.id] ?? 0;
-        row[field] = value;
-        total += value;
+        const sharesValue = month.shares[holder.id] ?? 0;
+        const personalValue = month.personalExpenses[holder.id] ?? 0;
+        const payoutValue = month.payouts[holder.id] ?? 0;
+
+        row[`${field}_shares`] = sharesValue;
+        row[`${field}_expenses`] = personalValue;
+        row[`${field}_payout`] = payoutValue;
+
+        total += payoutValue;
         hasValue = true;
       });
 
@@ -173,16 +200,28 @@ export default function YearGrid({
     monthFields.forEach(({ field, monthNumber }) => {
       const month = monthMap.get(monthNumber);
       if (!month || !month.hasData) {
-        row[field] = null;
+        row[`${field}_shares`] = null;
+        row[`${field}_expenses`] = null;
+        row[`${field}_payout`] = null;
         return;
       }
 
+      const totalShares = Object.values(month.shares).reduce(
+        (acc, value) => acc + (value ?? 0),
+        0,
+      );
+      const totalPersonal = Object.values(month.personalExpenses).reduce(
+        (acc, value) => acc + (value ?? 0),
+        0,
+      );
       const monthTotal = shareholders.reduce((acc, holder) => {
         const value = month.payouts[holder.id] ?? 0;
         return acc + value;
       }, 0);
 
-      row[field] = monthTotal;
+      row[`${field}_shares`] = totalShares;
+      row[`${field}_expenses`] = totalPersonal;
+      row[`${field}_payout`] = monthTotal;
       ytd += monthTotal;
       hasValue = true;
     });
@@ -208,17 +247,46 @@ export default function YearGrid({
 
     const monthCols = monthFields.map<ColDef>(({ field, label, monthNumber }) => ({
       headerName: label,
-      field,
-      type: "numericColumn",
-      valueFormatter: (params: ValueFormatterParams) =>
-        formatCurrency(params.value as number | null | undefined),
-      cellClass: () =>
-        field === highlightField
-          ? "text-right cursor-pointer bg-[var(--brand-accent)]/10 font-semibold text-[var(--brand-primary)]"
-          : "text-right cursor-pointer text-[var(--brand-primary)]",
+      marryChildren: true,
       headerClass: "ag-header-brand",
-      width: 130,
-      colId: `month-${monthNumber}`,
+      children: [
+        {
+          headerName: "Shares",
+          field: `${field}_shares`,
+          type: "numericColumn",
+          valueFormatter: (params: ValueFormatterParams) =>
+            formatShares(params.value as number | null | undefined),
+          cellClass: "text-right text-[var(--brand-primary)]",
+          headerClass: "ag-header-brand",
+          width: 110,
+          colId: `month-${monthNumber}-shares`,
+        },
+        {
+          headerName: "Personal",
+          field: `${field}_expenses`,
+          type: "numericColumn",
+          valueFormatter: (params: ValueFormatterParams) =>
+            formatCurrency(params.value as number | null | undefined),
+          cellClass: "text-right text-[var(--brand-primary)]",
+          headerClass: "ag-header-brand",
+          width: 130,
+          colId: `month-${monthNumber}-expenses`,
+        },
+        {
+          headerName: "Payout",
+          field: `${field}_payout`,
+          type: "numericColumn",
+          valueFormatter: (params: ValueFormatterParams) =>
+            formatCurrency(params.value as number | null | undefined),
+          cellClass: () =>
+            field === highlightField
+              ? "text-right cursor-pointer bg-[var(--brand-accent)]/10 font-semibold text-[var(--brand-primary)]"
+              : "text-right cursor-pointer text-[var(--brand-primary)]",
+          headerClass: "ag-header-brand",
+          width: 130,
+          colId: `month-${monthNumber}-payout`,
+        },
+      ],
     }));
 
     const totalCol: ColDef = {
@@ -259,7 +327,8 @@ export default function YearGrid({
   const handleCellClicked = useCallback(
     (event: CellClickedEvent) => {
       if (!event.colDef.field) return;
-      const monthField = monthFields.find((field) => field.field === event.colDef.field);
+      const baseField = event.colDef.field.split("_")[0];
+      const monthField = monthFields.find((field) => field.field === baseField);
       if (!monthField) {
         return;
       }
