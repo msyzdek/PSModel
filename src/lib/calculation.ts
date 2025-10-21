@@ -52,7 +52,7 @@ const roundToCents = (value: number): number => {
 };
 
 const findLargestPositivePayoutIndex = (rows: HolderCalculation[]): number | null => {
-  let max = 0;
+  let max = Number.NEGATIVE_INFINITY;
   let idx: number | null = null;
   rows.forEach((row, index) => {
     if (row.payoutRounded > 0 && row.payoutRounded >= max) {
