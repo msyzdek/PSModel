@@ -316,7 +316,11 @@ class ProfitShareCalculationService:
         2. Calculate rounding delta (rounded_total - unrounded_total)
         3. Find holder with largest positive payout
         4. Adjust that holder's payout by the delta
-        5. Validate rounded total equals rounded pool
+
+        Note: Payouts may not equal the adjusted pool because:
+        - Personal charges reduce payouts below gross allocations
+        - Carry-forwards reduce payouts
+        - Zero floor prevents negative payouts
 
         Args:
             payouts: Dictionary of unrounded payout amounts
@@ -352,16 +356,6 @@ class ProfitShareCalculationService:
             # Apply adjustment to that holder
             if adjusted_holder_name is not None:
                 rounded_payouts[adjusted_holder_name] -= rounding_delta
-
-        # Validate that rounded total equals rounded pool
-        final_total = sum(rounded_payouts.values(), Decimal("0"))
-        rounded_pool = self.round_half_up(adjusted_pool)
-
-        # Allow small floating point differences
-        if abs(final_total - rounded_pool) > Decimal("0.01"):
-            raise ValueError(
-                f"Rounding reconciliation failed: total={final_total}, pool={rounded_pool}"
-            )
 
         return rounded_payouts, rounding_delta, adjusted_holder_name
 

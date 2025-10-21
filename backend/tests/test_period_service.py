@@ -55,23 +55,23 @@ def test_create_period_basic(period_service: PeriodService) -> None:
 
 def test_create_period_with_carry_forward(period_service: PeriodService) -> None:
     """Test creating a period with carry-forwards from prior period."""
-    # Create first period
+    # Create first period with charges exceeding gross allocation
     period1_data = PeriodInput(
         year=2024,
         month=1,
-        net_income_qb=Decimal("10000.00"),
+        net_income_qb=Decimal("5000.00"),
         ps_addback=Decimal("0.00"),
         owner_draws=Decimal("0.00"),
     )
 
     holders1 = [
-        HolderInput(holder_name="Alice", shares=50, personal_charges=Decimal("8000.00")),
+        HolderInput(holder_name="Alice", shares=50, personal_charges=Decimal("10000.00")),
         HolderInput(holder_name="Bob", shares=50, personal_charges=Decimal("0.00")),
     ]
 
     period1 = period_service.create_period(period1_data, holders1)
 
-    # Alice should have carry-forward since her charges exceed her allocation
+    # Alice should have carry-forward since her charges exceed her gross allocation
     alice_alloc = next(a for a in period1.allocations if a.holder_name == "Alice")
     assert alice_alloc.carry_forward_out > 0
 

@@ -70,9 +70,9 @@ def create_period(
 
 @router.get("", response_model=list[PeriodSummary])
 def list_periods(
-    limit: int = 12,
     service: Annotated[PeriodService, Depends(get_period_service)],
     current_user: CurrentUser,
+    limit: int = 12,
 ) -> list[PeriodSummary]:
     """
     List all periods ordered by most recent first.
