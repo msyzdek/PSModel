@@ -147,18 +147,20 @@ async function getYearOverview(year: number): Promise<YearOverviewData> {
 }
 
 interface YearPageProps {
-  params: { year: string };
-  searchParams?: { saved?: string };
+  params: Promise<{ year: string }>;
+  searchParams?: Promise<{ saved?: string }>;
 }
 
 export default async function YearPage({ params, searchParams }: YearPageProps) {
-  const parsedYear = Number(params.year);
+  const { year } = await params;
+  const parsedYear = Number(year);
   if (Number.isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
     notFound();
   }
 
   const overview = await getYearOverview(parsedYear);
-  const savedMonth = searchParams?.saved ?? null;
+  const resolvedSearch = searchParams ? await searchParams : undefined;
+  const savedMonth = resolvedSearch?.saved ?? null;
   const savedMonthLabel = savedMonth
     ? (() => {
         const { year, month } = parseYearMonth(savedMonth);
