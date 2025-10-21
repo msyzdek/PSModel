@@ -210,21 +210,57 @@ export function parseMonthlyNetIncome(report: any, year: number): Record<string,
   const cells: ColData[] = targetRow.Summary?.ColData ?? targetRow.ColData ?? [];
   if (!cells.length) throw new Error("Net Income row has no data cells");
 
-  const numeric = cells
-    .map((c) => (c?.value ?? "").trim())
-    .map((v) => ({ raw: v, num: moneyStringToNumberOrNull(v) }))
-    .filter((x) => x.num !== null) as { raw: string; num: number }[];
+  // Prefer using the report header to determine which columns map to months.
+  // This avoids including the first "Account" column or the trailing "Total" column.
+  const headerColumns: { ColTitle?: string; ColType?: string }[] =
+    (report?.Columns?.Column as any[]) ?? [];
 
-  // We expect 12 monthly numbers; there may also be a Total. Take the last 12 numbers.
-  const lastTwelve = numeric.slice(-12);
-  if (lastTwelve.length !== 12) {
-    throw new Error(`Expected 12 monthly values, found ${lastTwelve.length}`);
+  let monthIndexes: number[] = [];
+  if (Array.isArray(headerColumns) && headerColumns.length > 0) {
+    monthIndexes = headerColumns
+      .map((col, idx) => ({ idx, col }))
+      .filter(({ col }) => {
+        const title = (col?.ColTitle ?? "").toString();
+        const type = (col?.ColType ?? "").toString().toLowerCase();
+        if (type === "account") return false; // first label column
+        if (/total/i.test(title)) return false; // trailing total
+        return true; // remaining numeric month columns
+      })
+      .map(({ idx }) => idx)
+      .slice(0, 12); // Jan..Dec
+  }
+
+  const pickByIndexes = (idxs: number[]) =>
+    idxs
+      .map((i) => (cells[i]?.value ?? "").toString().trim())
+      .map((raw) => ({ raw, num: moneyStringToNumberOrNull(raw) }))
+      .filter((x) => x.num !== null) as { raw: string; num: number }[];
+
+  let monthCells: { raw: string; num: number }[] = [];
+  if (monthIndexes.length >= 12) {
+    monthCells = pickByIndexes(monthIndexes);
+  }
+
+  // Fallback: derive from numeric cells if header is missing/unexpected.
+  if (monthCells.length !== 12) {
+    const numeric = cells
+      .map((c) => (c?.value ?? "").trim())
+      .map((v) => ({ raw: v, num: moneyStringToNumberOrNull(v) }))
+      .filter((x) => x.num !== null) as { raw: string; num: number }[];
+
+    // If there are 13 numeric cells (12 months + total), drop the last total.
+    // Otherwise, take the first 12 we have.
+    monthCells = numeric.length >= 13 ? numeric.slice(0, 12) : numeric.slice(0, 12);
+  }
+
+  if (monthCells.length !== 12) {
+    throw new Error(`Expected 12 monthly values, found ${monthCells.length}`);
   }
 
   const result: Record<string, string> = {};
   for (let m = 1; m <= 12; m++) {
     const ym = `${year}-${String(m).padStart(2, "0")}`;
-    const v = lastTwelve[m - 1];
+    const v = monthCells[m - 1];
     result[ym] = normalizeMoneyString(v.raw);
   }
   return result;
