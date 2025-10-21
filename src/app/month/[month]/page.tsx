@@ -330,6 +330,14 @@ async function handleSaveAll(formData: FormData) {
     redirect("/");
   }
 
+  const parsedMonth = (() => {
+    try {
+      return parseYearMonth(month);
+    } catch {
+      redirect(`/year/${new Date().getFullYear()}`);
+    }
+  })();
+
   const netIncomeQB = parseNumberField(formData.get("net_income_qb"), { allowNegative: true });
   const psAddBack = parseNumberField(formData.get("ps_addback"), { allowNegative: true });
   const taxOptimizationReturn = parseNumberField(formData.get("tax_optimization_return"), {
@@ -368,8 +376,7 @@ async function handleSaveAll(formData: FormData) {
   await upsertShareAllocations(month, shareEntries);
   await upsertPersonalCharges(month, personalChargeEntries);
   await revalidateForMonth(month);
-  const { year } = parseYearMonth(month);
-  redirect(`/year/${year}?savedMonth=${month}`);
+  redirect(`/year/${parsedMonth.year}?savedMonth=${month}`);
 }
 
 interface MonthPageProps {
