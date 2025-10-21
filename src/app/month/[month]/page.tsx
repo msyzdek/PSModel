@@ -369,14 +369,15 @@ async function handleSaveAll(formData: FormData) {
 }
 
 interface MonthPageProps {
-  params: { month: string };
+  params: Promise<{ month: string }>;
 }
 
 export default async function MonthPage({ params }: MonthPageProps) {
-  if (!/^\d{4}-\d{2}$/.test(params.month)) {
+  const { month: monthParam } = await params;
+  if (!/^\d{4}-\d{2}$/.test(monthParam)) {
     notFound();
   }
-  const parsed = parseYearMonth(params.month);
+  const parsed = parseYearMonth(monthParam);
   if (
     Number.isNaN(parsed.year) ||
     Number.isNaN(parsed.month) ||
@@ -386,7 +387,7 @@ export default async function MonthPage({ params }: MonthPageProps) {
     notFound();
   }
 
-  const context = await getMonthContext(params.month);
+  const context = await getMonthContext(monthParam);
 
   const { year, month } = context;
   const prevMonthKey = formatYearMonth(month === 1 ? year - 1 : year, month === 1 ? 12 : month - 1);
@@ -422,7 +423,7 @@ export default async function MonthPage({ params }: MonthPageProps) {
       </section>
 
       <form action={handleSaveAll} className="space-y-8">
-        <input type="hidden" name="month" value={params.month} />
+        <input type="hidden" name="month" value={monthParam} />
 
         <section className="rounded-3xl bg-[var(--card-bg)] p-6 shadow-lg">
           <div className="mb-6">
