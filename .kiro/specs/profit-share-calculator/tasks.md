@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Set up project structure and dependencies
+- [x] 1. Set up project structure and dependencies
   - Create backend directory with FastAPI project structure (app/, tests/, requirements.txt)
   - Create frontend directory with Next.js project using create-next-app with TypeScript and Tailwind
   - Configure pyproject.toml with Black, Ruff, mypy settings
