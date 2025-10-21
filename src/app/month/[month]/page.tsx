@@ -313,9 +313,13 @@ function parseNumberField(value: FormDataEntryValue | null, options?: { allowNeg
 }
 
 async function revalidateForMonth(monthKey: string) {
-  const { year } = parseYearMonth(monthKey);
-  revalidatePath(`/month/${monthKey}`);
-  revalidatePath(`/year/${year}`);
+  try {
+    const { year } = parseYearMonth(monthKey);
+    revalidatePath(`/month/${monthKey}`);
+    revalidatePath(`/year/${year}`);
+  } catch {
+    revalidatePath(`/month/${monthKey}`);
+  }
 }
 
 async function handleSaveAll(formData: FormData) {
@@ -364,8 +368,12 @@ async function handleSaveAll(formData: FormData) {
   await upsertShareAllocations(month, shareEntries);
   await upsertPersonalCharges(month, personalChargeEntries);
   await revalidateForMonth(month);
-  const { year } = parseYearMonth(month);
-  redirect(`/year/${year}?saved=${month}`);
+  try {
+    const { year } = parseYearMonth(month);
+    redirect(`/year/${year}?saved=${month}`);
+  } catch {
+    redirect(`/year/${new Date().getFullYear()}`);
+  }
 }
 
 interface MonthPageProps {
@@ -377,7 +385,12 @@ export default async function MonthPage({ params }: MonthPageProps) {
   if (!/^\d{4}-\d{2}$/.test(monthParam)) {
     notFound();
   }
-  const parsed = parseYearMonth(monthParam);
+  let parsed;
+  try {
+    parsed = parseYearMonth(monthParam);
+  } catch {
+    notFound();
+  }
   if (
     Number.isNaN(parsed.year) ||
     Number.isNaN(parsed.month) ||

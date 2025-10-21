@@ -160,14 +160,21 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
 
   const overview = await getYearOverview(parsedYear);
   const resolvedSearch = searchParams ? await searchParams : undefined;
-  const savedMonth = resolvedSearch?.saved ?? null;
-  const savedMonthLabel = savedMonth
-    ? (() => {
-        const { year, month } = parseYearMonth(savedMonth);
-        if (Number.isNaN(year) || Number.isNaN(month)) return null;
-        return `${MONTH_NAMES[month - 1] ?? ""} ${year}`;
-      })()
-    : null;
+
+  let highlightMonth: string | undefined;
+  let savedMonthLabel: string | null = null;
+  if (resolvedSearch?.saved) {
+    try {
+      const { year: savedYear, month: savedMonthNumber } = parseYearMonth(resolvedSearch.saved);
+      if (savedYear === parsedYear) {
+        highlightMonth = resolvedSearch.saved;
+        savedMonthLabel = `${MONTH_NAMES[savedMonthNumber - 1] ?? ""} ${savedYear}`;
+      }
+    } catch {
+      highlightMonth = undefined;
+      savedMonthLabel = null;
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -202,7 +209,7 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
         shareholders={overview.shareholders}
         months={overview.months}
         monthNames={MONTH_NAMES}
-        highlightMonth={savedMonth ?? undefined}
+        highlightMonth={highlightMonth}
       />
     </div>
   );

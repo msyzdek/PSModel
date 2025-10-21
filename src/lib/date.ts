@@ -10,6 +10,12 @@ export function parseYearMonth(value: string): { year: number; month: number } {
   }
   const year = Number(match[1]);
   const month = Number(match[2]);
+  if (Number.isNaN(year) || Number.isNaN(month)) {
+    throw new Error(`Invalid year-month value: "${value}".`);
+  }
+  if (month < 1 || month > 12) {
+    throw new RangeError(`Month must be between 01 and 12. Received "${value}".`);
+  }
   return { year, month };
 }
 
