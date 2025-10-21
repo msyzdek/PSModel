@@ -1,6 +1,11 @@
 """Pytest configuration and fixtures."""
 
 import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.models.base import Base
+from tests.fixtures import TestFixtures
 
 
 @pytest.fixture
@@ -25,3 +30,20 @@ def sample_holders() -> list[dict]:
         {"holder_name": "Holder A", "shares": 60, "personal_charges": 1000.00},
         {"holder_name": "Holder B", "shares": 40, "personal_charges": 500.00},
     ]
+
+
+@pytest.fixture
+def db_session() -> Session:
+    """Create a test database session."""
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    SessionLocal = sessionmaker(bind=engine)
+    session = SessionLocal()
+    yield session
+    session.close()
+
+
+@pytest.fixture
+def test_fixtures() -> TestFixtures:
+    """Provide access to test fixtures."""
+    return TestFixtures()

@@ -284,15 +284,15 @@
     - Add deployment configuration for Vercel
     - _Requirements: 7.5_
 
-- [ ] 14. Integration and end-to-end testing
-  - [ ] 14.1 Create test data fixtures
+- [x] 14. Integration and end-to-end testing
+  - [x] 14.1 Create test data fixtures
     - Create sample period data based on Excel model
     - Create test cases for edge cases (negative pool, zero shares)
     - Create test cases for carry-forward scenarios
     - Create test cases for rounding edge cases
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 3.1, 3.2, 3.3, 3.4, 3.5, 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [ ] 14.2 Test complete user flows
+  - [x] 14.2 Test complete user flows
     - Test creating first period (no carry-forward)
     - Test creating second period (with carry-forward)
     - Test updating existing period
@@ -300,7 +300,7 @@
     - Test error scenarios
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4, 3.5, 7.1, 7.2, 7.3, 7.4, 10.1, 10.2, 10.3, 10.4, 10.5_
 
-  - [ ] 14.3 Verify calculation accuracy
+  - [x] 14.3 Verify calculation accuracy
     - Compare calculation results with Excel model
     - Verify rounding reconciliation
     - Verify carry-forward propagation
