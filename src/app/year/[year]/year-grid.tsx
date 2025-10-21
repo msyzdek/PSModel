@@ -61,7 +61,6 @@ interface YearGridProps {
   shareholders: SimplifiedShareholder[];
   months: MonthSummary[];
   monthNames: string[];
-  highlightMonth?: string;
 }
 
 const buildMonthFields = (months: MonthSummary[], monthNames: string[]): MonthField[] =>
@@ -76,7 +75,6 @@ export default function YearGrid({
   shareholders,
   months,
   monthNames,
-  highlightMonth,
 }: YearGridProps) {
   const router = useRouter();
   const monthFields = useMemo(() => buildMonthFields(months, monthNames), [months, monthNames]);
@@ -85,53 +83,46 @@ export default function YearGrid({
     months.forEach((month) => map.set(month.month, month));
     return map;
   }, [months]);
-  const highlightField = useMemo(() => {
-    if (!highlightMonth) return null;
-    const parts = highlightMonth.split("-");
-    if (parts.length !== 2) return null;
-    const mm = parts[1];
-    return `m${mm}`;
-  }, [highlightMonth]);
 
-const aggregatedRows: GridRow[] = useMemo(() => {
-  const buildRow = (
-    id: string,
-    label: string,
-    selector: (month: MonthSummary) => number | null,
-  ): GridRow => {
-    const row: GridRow = { id, label, type: "meta" };
-    let total = 0;
-    let hasValue = false;
-    monthFields.forEach(({ field, monthNumber }) => {
-      const month = monthMap.get(monthNumber);
-      const value = month ? selector(month) : null;
-      row[field] = value;
-      if (value !== null && value !== undefined) {
-        total += value;
-        hasValue = true;
-      }
-    });
-    row.ytd = hasValue ? total : null;
-    return row;
-  };
+  const aggregatedRows: GridRow[] = useMemo(() => {
+    const buildRow = (
+      id: string,
+      label: string,
+      selector: (month: MonthSummary) => number | null,
+    ): GridRow => {
+      const row: GridRow = { id, label, type: "meta" };
+      let total = 0;
+      let hasValue = false;
+      monthFields.forEach(({ field, monthNumber }) => {
+        const month = monthMap.get(monthNumber);
+        const value = month ? selector(month) : null;
+        row[field] = value;
+        if (value !== null && value !== undefined) {
+          total += value;
+          hasValue = true;
+        }
+      });
+      row.ytd = hasValue ? total : null;
+      return row;
+    };
 
-  return [
-    buildRow("netIncome", "Net income (QBO)", (month) => month.netIncomeQB),
-    buildRow("taxOptimizationReturn", "Tax optimization return", (month) =>
-      month.taxOptimizationReturn !== null ? -month.taxOptimizationReturn : null,
-    ),
-    buildRow("psAddBack", "PS add-back", (month) => month.psAddBack),
-    buildRow("psPayoutAddBack", "PS payouts add-back", (month) => month.psPayoutAddBack),
-    buildRow("ownerSalary", "Owner salary", (month) =>
-      month.ownerSalary !== null ? -month.ownerSalary : null,
-    ),
-    buildRow("uncollectible", "Uncollectible", (month) =>
-      month.uncollectible !== null ? -month.uncollectible : null,
-    ),
-    buildRow("personalAddBack", "Personal add-back", (month) => month.personalAddBackTotal),
-    buildRow("adjustedPool", "Adjusted pool", (month) => month.adjustedPool),
-  ];
-}, [monthFields, monthMap]);
+    return [
+      buildRow("netIncome", "Net income (QBO)", (month) => month.netIncomeQB),
+      buildRow("taxOptimizationReturn", "Tax optimization return", (month) =>
+        month.taxOptimizationReturn !== null ? -month.taxOptimizationReturn : null,
+      ),
+      buildRow("psAddBack", "PS add-back", (month) => month.psAddBack),
+      buildRow("psPayoutAddBack", "PS payouts add-back", (month) => month.psPayoutAddBack),
+      buildRow("ownerSalary", "Owner salary", (month) =>
+        month.ownerSalary !== null ? -month.ownerSalary : null,
+      ),
+      buildRow("uncollectible", "Uncollectible", (month) =>
+        month.uncollectible !== null ? -month.uncollectible : null,
+      ),
+      buildRow("personalAddBack", "Personal add-back", (month) => month.personalAddBackTotal),
+      buildRow("adjustedPool", "Adjusted pool", (month) => month.adjustedPool),
+    ];
+  }, [monthFields, monthMap]);
 
   const shareholderRows: GridRow[] = useMemo(() => {
     return shareholders.map((holder) => {
@@ -218,10 +209,7 @@ const aggregatedRows: GridRow[] = useMemo(() => {
       type: "numericColumn",
       valueFormatter: (params: ValueFormatterParams) =>
         formatCurrency(params.value as number | null | undefined),
-      cellClass: () =>
-        field === highlightField
-          ? "text-right cursor-pointer bg-[var(--brand-accent)]/10 font-semibold text-[var(--brand-primary)]"
-          : "text-right cursor-pointer text-[var(--brand-primary)]",
+      cellClass: "text-right cursor-pointer text-[var(--brand-primary)]",
       headerClass: "ag-header-brand",
       width: 140,
       colId: `month-${monthNumber}`,
@@ -249,7 +237,7 @@ const aggregatedRows: GridRow[] = useMemo(() => {
         width: 140,
       },
     ];
-  }, [monthFields, highlightField]);
+  }, [monthFields]);
 
   const shareholderColumnDefs = useMemo<ColDef[]>(() => {
     const baseCols: ColDef[] = [
@@ -297,10 +285,7 @@ const aggregatedRows: GridRow[] = useMemo(() => {
           type: "numericColumn",
           valueFormatter: (params: ValueFormatterParams) =>
             formatCurrency(params.value as number | null | undefined),
-          cellClass: () =>
-            field === highlightField
-              ? "text-right cursor-pointer bg-[var(--brand-accent)]/10 font-semibold text-[var(--brand-primary)]"
-              : "text-right cursor-pointer text-[var(--brand-primary)]",
+          cellClass: "text-right cursor-pointer text-[var(--brand-primary)]",
           headerClass: "ag-header-brand",
           width: 130,
           colId: `month-${monthNumber}-payout`,
@@ -320,7 +305,7 @@ const aggregatedRows: GridRow[] = useMemo(() => {
     };
 
     return [...baseCols, ...monthCols, totalCol];
-  }, [monthFields, highlightField]);
+  }, [monthFields]);
 
   const defaultColDef = useMemo<ColDef>(
     () => ({

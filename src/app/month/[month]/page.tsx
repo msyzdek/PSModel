@@ -370,7 +370,7 @@ async function handleSaveAll(formData: FormData) {
   await revalidateForMonth(month);
   try {
     const { year } = parseYearMonth(month);
-    redirect(`/year/${year}?saved=${month}`);
+    redirect(`/year/${year}`);
   } catch {
     redirect(`/year/${new Date().getFullYear()}`);
   }

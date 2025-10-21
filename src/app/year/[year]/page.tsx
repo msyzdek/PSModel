@@ -148,10 +148,9 @@ async function getYearOverview(year: number): Promise<YearOverviewData> {
 
 interface YearPageProps {
   params: Promise<{ year: string }>;
-  searchParams?: Promise<{ saved?: string }>;
 }
 
-export default async function YearPage({ params, searchParams }: YearPageProps) {
+export default async function YearPage({ params }: YearPageProps) {
   const { year } = await params;
   const parsedYear = Number(year);
   if (Number.isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
@@ -159,33 +158,9 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
   }
 
   const overview = await getYearOverview(parsedYear);
-  const resolvedSearch = searchParams ? await searchParams : undefined;
-
-  let highlightMonth: string | undefined;
-  let savedMonthLabel: string | null = null;
-  if (resolvedSearch?.saved) {
-    try {
-      const { year: savedYear, month: savedMonthNumber } = parseYearMonth(resolvedSearch.saved);
-      if (savedYear === parsedYear) {
-        highlightMonth = resolvedSearch.saved;
-        savedMonthLabel = `${MONTH_NAMES[savedMonthNumber - 1] ?? ""} ${savedYear}`;
-      }
-    } catch {
-      highlightMonth = undefined;
-      savedMonthLabel = null;
-    }
-  }
 
   return (
     <div className="space-y-8">
-      {savedMonthLabel && (
-        <div
-          className="rounded-md border border-[var(--brand-primary)]/20 bg-white px-4 py-3 text-sm text-[var(--brand-primary)] shadow-sm"
-          role="status"
-        >
-          Saved changes for {savedMonthLabel}.
-        </div>
-      )}
       <section className="rounded-3xl bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-primary-light)] px-8 py-10 text-white shadow-xl">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="space-y-3">
@@ -209,7 +184,6 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
         shareholders={overview.shareholders}
         months={overview.months}
         monthNames={MONTH_NAMES}
-        highlightMonth={highlightMonth}
       />
     </div>
   );
