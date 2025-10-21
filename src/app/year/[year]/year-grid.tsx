@@ -1,22 +1,11 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
-import {
-  AllCommunityModule,
-  ModuleRegistry,
-  type CellClickedEvent,
-  type ColDef,
-  type ValueFormatterParams,
-} from "ag-grid-community";
-import { AgGridReact } from "ag-grid-react";
+import { Fragment, useCallback, useMemo } from "react";
+import type { JSX } from "react";
 import { useRouter } from "next/navigation";
 
 import type { MonthSummary, SimplifiedShareholder } from "./page";
 import { formatYearMonth } from "@/lib/date";
-
-import "ag-grid-community/styles/ag-theme-quartz.css";
-
-ModuleRegistry.registerModules([AllCommunityModule]);
 
 type MonthField = {
   field: string;
@@ -178,11 +167,11 @@ export default function YearGrid({
         return;
       }
 
-      const totalShares = Object.values(month.shares).reduce(
+      const totalShares = Object.values(month.shares).reduce<number>(
         (acc, value) => acc + (value ?? 0),
         0,
       );
-      const totalPersonal = Object.values(month.personalExpenses).reduce(
+      const totalPersonal = Object.values(month.personalExpenses).reduce<number>(
         (acc, value) => acc + (value ?? 0),
         0,
       );
@@ -202,170 +191,172 @@ export default function YearGrid({
     return row;
   }, [monthFields, monthMap, shareholders]);
 
-  const aggregatedColumnDefs = useMemo<ColDef[]>(() => {
-    const metricCols = monthFields.map<ColDef>(({ field, label, monthNumber }) => ({
-      headerName: label,
-      field,
-      type: "numericColumn",
-      valueFormatter: (params: ValueFormatterParams) =>
-        formatCurrency(params.value as number | null | undefined),
-      cellClass: "text-right cursor-pointer text-[var(--brand-primary)]",
-      headerClass: "ag-header-brand",
-      width: 140,
-      colId: `month-${monthNumber}`,
-    }));
-
-    return [
-      {
-        headerName: "Metric",
-        field: "label",
-        pinned: "left",
-        lockPinned: true,
-        cellClass: "font-medium text-[var(--brand-primary)]",
-        headerClass: "ag-header-brand",
-        width: 220,
-      },
-      ...metricCols,
-      {
-        headerName: "YTD",
-        field: "ytd",
-        type: "numericColumn",
-        valueFormatter: (params: ValueFormatterParams) =>
-          formatCurrency(params.value as number | null | undefined),
-        cellClass: "text-right font-semibold text-[var(--brand-primary)]",
-        headerClass: "ag-header-brand",
-        width: 140,
-      },
-    ];
-  }, [monthFields]);
-
-  const shareholderColumnDefs = useMemo<ColDef[]>(() => {
-    const baseCols: ColDef[] = [
-      {
-        headerName: "Shareholder",
-        field: "label",
-        pinned: "left",
-        lockPinned: true,
-        cellClass: "font-medium text-[var(--brand-primary)]",
-        headerClass: "ag-header-brand",
-        width: 220,
-      },
-    ];
-
-    const monthCols = monthFields.map<ColDef>(({ field, label, monthNumber }) => ({
-      headerName: label,
-      marryChildren: true,
-      headerClass: "ag-header-brand",
-      children: [
-        {
-          headerName: "Shares",
-          field: `${field}_shares`,
-          type: "numericColumn",
-          valueFormatter: (params: ValueFormatterParams) =>
-            formatShares(params.value as number | null | undefined),
-          cellClass: "text-right text-[var(--brand-primary)]",
-          headerClass: "ag-header-brand",
-          width: 110,
-          colId: `month-${monthNumber}-shares`,
-        },
-        {
-          headerName: "Personal",
-          field: `${field}_expenses`,
-          type: "numericColumn",
-          valueFormatter: (params: ValueFormatterParams) =>
-            formatCurrency(params.value as number | null | undefined),
-          cellClass: "text-right text-[var(--brand-primary)]",
-          headerClass: "ag-header-brand",
-          width: 130,
-          colId: `month-${monthNumber}-expenses`,
-        },
-        {
-          headerName: "Payout",
-          field: `${field}_payout`,
-          type: "numericColumn",
-          valueFormatter: (params: ValueFormatterParams) =>
-            formatCurrency(params.value as number | null | undefined),
-          cellClass: "text-right cursor-pointer text-[var(--brand-primary)]",
-          headerClass: "ag-header-brand",
-          width: 130,
-          colId: `month-${monthNumber}-payout`,
-        },
-      ],
-    }));
-
-    const totalCol: ColDef = {
-      headerName: "YTD",
-      field: "ytd",
-      type: "numericColumn",
-      valueFormatter: (params: ValueFormatterParams) =>
-        formatCurrency(params.value as number | null | undefined),
-      cellClass: "text-right font-semibold text-[var(--brand-primary)]",
-      headerClass: "ag-header-brand",
-      width: 130,
-    };
-
-    return [...baseCols, ...monthCols, totalCol];
-  }, [monthFields]);
-
-  const defaultColDef = useMemo<ColDef>(
-    () => ({
-      sortable: false,
-      filter: false,
-      resizable: true,
-    }),
-    [],
-  );
-
-  const getRowClass = (params: { data?: GridRow }): string => {
-    if (!params.data) return "";
-    if (params.data.type === "meta") {
+  const getRowClasses = (type: GridRow["type"]): string => {
+    if (type === "meta") {
       return "bg-slate-50/70 font-medium";
     }
-    if (params.data.type === "total") {
+    if (type === "total") {
       return "bg-slate-100/80 font-semibold";
     }
     return "";
   };
 
-  const handleCellClicked = useCallback(
-    (event: CellClickedEvent) => {
-      if (!event.colDef.field) return;
-      const baseField = event.colDef.field.split("_")[0];
-      const monthField = monthFields.find((field) => field.field === baseField);
-      if (!monthField) {
-        return;
-      }
-
-      const target = formatYearMonth(year, monthField.monthNumber);
+  const handleNavigateToMonth = useCallback(
+    (monthNumber: number) => {
+      const target = formatYearMonth(year, monthNumber);
       router.push(`/month/${target}`);
     },
-    [monthFields, router, year],
+    [router, year],
+  );
+
+  const renderMonthHeaderContent = useCallback(
+    (field: MonthField, alignment: "between" | "end" = "between"): JSX.Element => {
+      const justification = alignment === "end" ? "justify-end" : "justify-between";
+      const labelClass = alignment === "end" ? "text-right" : "";
+      return (
+        <div className={`flex items-center gap-2 ${justification}`}>
+          <span className={labelClass}>{field.label}</span>
+          <button
+            type="button"
+            className="rounded-full border border-[var(--brand-primary)] px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-[var(--brand-primary)] transition hover:bg-[var(--brand-primary)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-accent)]"
+            onClick={() => handleNavigateToMonth(field.monthNumber)}
+            aria-label={`Edit ${field.label} ${year}`}
+          >
+            Edit
+          </button>
+        </div>
+      );
+    },
+    [handleNavigateToMonth, year],
   );
 
   return (
     <div className="space-y-8">
-      <div className="ag-theme-quartz rounded-3xl border border-white/40 bg-white/95 p-3 shadow-xl">
-        <AgGridReact
-          rowData={aggregatedRows}
-          columnDefs={aggregatedColumnDefs}
-          defaultColDef={defaultColDef}
-          suppressMovableColumns
-          getRowClass={getRowClass}
-          domLayout="autoHeight"
-          onCellClicked={handleCellClicked}
-        />
+      <div className="rounded-3xl border border-white/40 bg-white/95 p-3 shadow-xl">
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-separate border-spacing-0 text-sm text-[var(--brand-primary)]">
+            <thead>
+              <tr className="bg-slate-100/80 text-xs font-semibold uppercase tracking-[0.15em] text-[var(--brand-primary)]">
+                <th className="whitespace-nowrap px-4 py-3 text-left">Metric</th>
+                {monthFields.map((field) => (
+                  <th key={field.field} className="whitespace-nowrap px-4 py-3">
+                    {renderMonthHeaderContent(field, "end")}
+                  </th>
+                ))}
+                <th className="whitespace-nowrap px-4 py-3 text-right">YTD</th>
+              </tr>
+            </thead>
+            <tbody>
+              {aggregatedRows.map((row) => (
+                <tr key={row.id} className={getRowClasses(row.type)}>
+                  <th scope="row" className="whitespace-nowrap border-b border-slate-200 px-4 py-3 text-left">
+                    {row.label}
+                  </th>
+                  {monthFields.map((field) => {
+                    const rawValue = row[field.field];
+                    const value = typeof rawValue === "number" ? rawValue : null;
+                    return (
+                      <td key={field.field} className="border-b border-slate-200 px-4 py-3 text-right whitespace-nowrap">
+                        {formatCurrency(value)}
+                      </td>
+                    );
+                  })}
+                  <td className="border-b border-slate-200 px-4 py-3 text-right font-semibold whitespace-nowrap">
+                    {formatCurrency(typeof row.ytd === "number" ? row.ytd : null)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div className="ag-theme-quartz rounded-3xl border border-white/40 bg-white/95 p-3 shadow-xl">
-        <AgGridReact
-          rowData={shareholderRows}
-          columnDefs={shareholderColumnDefs}
-          defaultColDef={defaultColDef}
-          pinnedBottomRowData={[totalRow]}
-          suppressMovableColumns
-          getRowClass={getRowClass}
-          domLayout="autoHeight"
-          onCellClicked={handleCellClicked}
-        />
+      <div className="rounded-3xl border border-white/40 bg-white/95 p-3 shadow-xl">
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-separate border-spacing-0 text-sm text-[var(--brand-primary)]">
+            <thead>
+              <tr className="bg-slate-100/80 text-xs font-semibold uppercase tracking-[0.15em] text-[var(--brand-primary)]">
+                <th rowSpan={2} className="whitespace-nowrap px-4 py-3 text-left">
+                  Shareholder
+                </th>
+                {monthFields.map((field) => (
+                  <th key={field.field} colSpan={3} className="whitespace-nowrap px-4 py-3 text-center">
+                    {field.label}
+                  </th>
+                ))}
+                <th rowSpan={2} className="whitespace-nowrap px-4 py-3 text-right">
+                  YTD
+                </th>
+              </tr>
+              <tr className="bg-slate-50/80 text-[0.7rem] uppercase tracking-[0.3em] text-[var(--brand-primary)]">
+                {monthFields.map((field) => (
+                  <Fragment key={field.field}>
+                    <th className="whitespace-nowrap px-4 py-2 text-right">Shares</th>
+                    <th className="whitespace-nowrap px-4 py-2 text-right">Personal</th>
+                    <th className="whitespace-nowrap border-r border-slate-200 px-4 py-2 text-right">Payout</th>
+                  </Fragment>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {shareholderRows.map((row) => (
+                <tr key={row.id} className={getRowClasses(row.type)}>
+                  <th scope="row" className="whitespace-nowrap border-b border-slate-200 px-4 py-3 text-left">
+                    {row.label}
+                  </th>
+                  {monthFields.map((field) => {
+                    const shares = row[`${field.field}_shares`];
+                    const personal = row[`${field.field}_expenses`];
+                    const payout = row[`${field.field}_payout`];
+                    return (
+                      <Fragment key={field.field}>
+                        <td className="border-b border-slate-200 px-4 py-3 text-right whitespace-nowrap">
+                          {formatShares(typeof shares === "number" ? shares : null)}
+                        </td>
+                        <td className="border-b border-slate-200 px-4 py-3 text-right whitespace-nowrap">
+                          {formatCurrency(typeof personal === "number" ? personal : null)}
+                        </td>
+                        <td className="border-b border-r border-slate-200 px-4 py-3 text-right font-medium whitespace-nowrap">
+                          {formatCurrency(typeof payout === "number" ? payout : null)}
+                        </td>
+                      </Fragment>
+                    );
+                  })}
+                  <td className="border-b border-slate-200 px-4 py-3 text-right font-semibold whitespace-nowrap">
+                    {formatCurrency(typeof row.ytd === "number" ? row.ytd : null)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className={getRowClasses(totalRow.type)}>
+                <th scope="row" className="whitespace-nowrap border-t border-slate-200 px-4 py-3 text-left">
+                  {totalRow.label}
+                </th>
+                {monthFields.map((field) => {
+                  const shares = totalRow[`${field.field}_shares`];
+                  const personal = totalRow[`${field.field}_expenses`];
+                  const payout = totalRow[`${field.field}_payout`];
+                  return (
+                    <Fragment key={field.field}>
+                      <td className="border-t border-slate-200 px-4 py-3 text-right whitespace-nowrap">
+                        {formatShares(typeof shares === "number" ? shares : null)}
+                      </td>
+                      <td className="border-t border-slate-200 px-4 py-3 text-right whitespace-nowrap">
+                        {formatCurrency(typeof personal === "number" ? personal : null)}
+                      </td>
+                      <td className="border-t border-r border-slate-200 px-4 py-3 text-right font-semibold whitespace-nowrap">
+                        {formatCurrency(typeof payout === "number" ? payout : null)}
+                      </td>
+                    </Fragment>
+                  );
+                })}
+                <td className="border-t border-slate-200 px-4 py-3 text-right font-semibold whitespace-nowrap">
+                  {formatCurrency(typeof totalRow.ytd === "number" ? totalRow.ytd : null)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
     </div>
   );

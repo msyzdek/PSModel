@@ -16,6 +16,7 @@ export default function SavedMonthBanner({ savedMonth, label }: SavedMonthBanner
       return;
     }
     setVisible(true);
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 
     try {
       const url = new URL(window.location.href);
