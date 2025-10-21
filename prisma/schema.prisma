@@ -20,6 +20,8 @@ model Shareholder {
 
   shareAllocations ShareAllocation[]
   personalCharges  PersonalCharge[]
+
+  @@unique([name])
 }
 
 model Period {
