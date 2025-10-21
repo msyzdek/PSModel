@@ -17,6 +17,7 @@ beforeEach(async () => {
   await prisma.shareAllocation.deleteMany();
   await prisma.personalCharge.deleteMany();
   await prisma.period.deleteMany();
+  await prisma.shareholder.deleteMany();
 });
 
 describe("/api/qbo/connect", () => {
@@ -166,5 +167,56 @@ describe("/api/qbo/callback", () => {
     const feb = all.find((p) => p.month === "2025-02")!;
     expect(jan.ownerSalary.toString()).toBe("1234"); // unchanged
     expect(feb.ownerSalary.toString()).toBe("7777"); // base applied to gap
+  });
+
+  it("re-import preserves other Period fields and does not touch allocations/charges", async () => {
+    // Seed one shareholder
+    const holder = await prisma.shareholder.create({
+      data: { name: "Alice", email: "alice@example.com" },
+    });
+    // Seed existing period with non-netIncome fields set
+    const period = await prisma.period.create({
+      data: {
+        month: "2025-01",
+        netIncomeQB: "0",
+        psAddBack: "11",
+        ownerSalary: "1234",
+        taxOptimizationReturn: "22",
+        uncollectible: "33",
+        psPayoutAddBack: "44",
+      },
+    });
+    // Related data
+    await prisma.shareAllocation.create({
+      data: { periodId: period.id, shareholderId: holder.id, shares: "100" },
+    });
+    await prisma.personalCharge.create({
+      data: { periodId: period.id, shareholderId: holder.id, amount: "50", memo: "Test" },
+    });
+
+    // Re-import year; mocked parser returns Jan=10
+    const state = encodeState({ nonce: "nonce-7", year: 2025 });
+    const url = `http://localhost:3000/api/qbo/callback?code=abc&realmId=${process.env.QBO_ALLOWED_REALMID}&state=${state}`;
+    const req = new NextRequest(new Request(url, { headers: new Headers({ cookie: "qbo_oauth_nonce=nonce-7" }) }));
+    const res = await CallbackRoute.GET(req);
+    expect(res.status).toBeGreaterThanOrEqual(300);
+
+    const after = await prisma.period.findUnique({ where: { month: "2025-01" } });
+    expect(after).toBeTruthy();
+    expect(after!.netIncomeQB.toString()).toBe("10"); // updated from parser
+    // These fields should remain unchanged
+    expect(after!.psAddBack.toString()).toBe("11");
+    expect(after!.ownerSalary.toString()).toBe("1234");
+    expect(after!.taxOptimizationReturn.toString()).toBe("22");
+    expect(after!.uncollectible.toString()).toBe("33");
+    expect(after!.psPayoutAddBack.toString()).toBe("44");
+
+    // Related rows unchanged
+    const allocs = await prisma.shareAllocation.findMany({ where: { periodId: period.id } });
+    const charges = await prisma.personalCharge.findMany({ where: { periodId: period.id } });
+    expect(allocs).toHaveLength(1);
+    expect(allocs[0].shares.toString()).toBe("100");
+    expect(charges).toHaveLength(1);
+    expect(charges[0].amount.toString()).toBe("50");
   });
 });
