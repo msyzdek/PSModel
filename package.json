@@ -13,8 +13,7 @@
     "db:seed": "prisma db seed",
     "test": "vitest",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest run --coverage",
-    "export:fixture": "ts-node --transpile-only scripts/export-fixture.ts 2025-01 tests/fixtures/period-2025-01.json"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",
