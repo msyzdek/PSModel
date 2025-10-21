@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { calculatePeriod } from "@/lib/calculation";
 import { formatYearMonth, MONTH_NAMES, parseYearMonth } from "@/lib/date";
 import YearGrid from "./year-grid";
+import SavedMonthBanner from "./saved-month-banner";
 
 export type SimplifiedShareholder = Pick<Shareholder, "id" | "name">;
 
@@ -148,44 +149,35 @@ async function getYearOverview(year: number): Promise<YearOverviewData> {
 
 interface YearPageProps {
   params: Promise<{ year: string }>;
-  searchParams?: Promise<{ saved?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function YearPage({ params, searchParams }: YearPageProps) {
   const { year } = await params;
+  const resolvedSearchParams = await searchParams;
   const parsedYear = Number(year);
   if (Number.isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
     notFound();
   }
 
   const overview = await getYearOverview(parsedYear);
-  const resolvedSearch = searchParams ? await searchParams : undefined;
 
-  let highlightMonth: string | undefined;
+  const savedMonthParam = typeof resolvedSearchParams.savedMonth === "string" ? resolvedSearchParams.savedMonth : undefined;
   let savedMonthLabel: string | null = null;
-  if (resolvedSearch?.saved) {
+  if (savedMonthParam) {
     try {
-      const { year: savedYear, month: savedMonthNumber } = parseYearMonth(resolvedSearch.saved);
-      if (savedYear === parsedYear) {
-        highlightMonth = resolvedSearch.saved;
-        savedMonthLabel = `${MONTH_NAMES[savedMonthNumber - 1] ?? ""} ${savedYear}`;
+      const parsed = parseYearMonth(savedMonthParam);
+      if (parsed.year === parsedYear && parsed.month >= 1 && parsed.month <= 12) {
+        const monthName = MONTH_NAMES[parsed.month - 1] ?? `Month ${parsed.month}`;
+        savedMonthLabel = `${monthName} ${parsed.year}`;
       }
     } catch {
-      highlightMonth = undefined;
       savedMonthLabel = null;
     }
   }
 
   return (
     <div className="space-y-8">
-      {savedMonthLabel && (
-        <div
-          className="rounded-md border border-[var(--brand-primary)]/20 bg-white px-4 py-3 text-sm text-[var(--brand-primary)] shadow-sm"
-          role="status"
-        >
-          Saved changes for {savedMonthLabel}.
-        </div>
-      )}
       <section className="rounded-3xl bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-primary-light)] px-8 py-10 text-white shadow-xl">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="space-y-3">
@@ -204,12 +196,14 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
           </Link>
         </div>
       </section>
+      {savedMonthLabel ? (
+        <SavedMonthBanner savedMonth={savedMonthParam ?? null} label={savedMonthLabel} />
+      ) : null}
       <YearGrid
         year={parsedYear}
         shareholders={overview.shareholders}
         months={overview.months}
         monthNames={MONTH_NAMES}
-        highlightMonth={highlightMonth}
       />
     </div>
   );
