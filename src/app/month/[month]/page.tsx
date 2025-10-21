@@ -368,12 +368,8 @@ async function handleSaveAll(formData: FormData) {
   await upsertShareAllocations(month, shareEntries);
   await upsertPersonalCharges(month, personalChargeEntries);
   await revalidateForMonth(month);
-  try {
-    const { year } = parseYearMonth(month);
-    redirect(`/year/${year}`);
-  } catch {
-    redirect(`/year/${new Date().getFullYear()}`);
-  }
+  const { year } = parseYearMonth(month);
+  redirect(`/year/${year}?savedMonth=${month}`);
 }
 
 interface MonthPageProps {

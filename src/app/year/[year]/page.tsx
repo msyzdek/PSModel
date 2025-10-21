@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { calculatePeriod } from "@/lib/calculation";
 import { formatYearMonth, MONTH_NAMES, parseYearMonth } from "@/lib/date";
 import YearGrid from "./year-grid";
+import SavedMonthBanner from "./saved-month-banner";
 
 export type SimplifiedShareholder = Pick<Shareholder, "id" | "name">;
 
@@ -148,16 +149,32 @@ async function getYearOverview(year: number): Promise<YearOverviewData> {
 
 interface YearPageProps {
   params: Promise<{ year: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function YearPage({ params }: YearPageProps) {
+export default async function YearPage({ params, searchParams }: YearPageProps) {
   const { year } = await params;
+  const resolvedSearchParams = await searchParams;
   const parsedYear = Number(year);
   if (Number.isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
     notFound();
   }
 
   const overview = await getYearOverview(parsedYear);
+
+  const savedMonthParam = typeof resolvedSearchParams.savedMonth === "string" ? resolvedSearchParams.savedMonth : undefined;
+  let savedMonthLabel: string | null = null;
+  if (savedMonthParam) {
+    try {
+      const parsed = parseYearMonth(savedMonthParam);
+      if (parsed.year === parsedYear && parsed.month >= 1 && parsed.month <= 12) {
+        const monthName = MONTH_NAMES[parsed.month - 1] ?? `Month ${parsed.month}`;
+        savedMonthLabel = `${monthName} ${parsed.year}`;
+      }
+    } catch {
+      savedMonthLabel = null;
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -179,6 +196,9 @@ export default async function YearPage({ params }: YearPageProps) {
           </Link>
         </div>
       </section>
+      {savedMonthLabel ? (
+        <SavedMonthBanner savedMonth={savedMonthParam ?? null} label={savedMonthLabel} />
+      ) : null}
       <YearGrid
         year={parsedYear}
         shareholders={overview.shareholders}
