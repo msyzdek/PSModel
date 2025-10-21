@@ -44,6 +44,42 @@ def db_session() -> Session:
 
 
 @pytest.fixture
+def db() -> Session:
+    """Create a test database session (alias for db_session)."""
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    SessionLocal = sessionmaker(bind=engine)
+    session = SessionLocal()
+    yield session
+    session.close()
+
+
+@pytest.fixture
+def sample_period(db: Session):
+    """Create a sample period for testing."""
+    from app.models.monthly_period import MonthlyPeriod
+    from decimal import Decimal
+
+    period = MonthlyPeriod(
+        year=2024,
+        month=1,
+        net_income_qb=Decimal("100000.00"),
+        ps_addback=Decimal("5000.00"),
+        owner_draws=Decimal("10000.00"),
+        uncollectible=Decimal("0.00"),
+        bad_debt=Decimal("0.00"),
+        tax_optimization=Decimal("0.00"),
+        adjusted_pool=Decimal("95000.00"),
+        total_shares=100,
+        rounding_delta=Decimal("0.00"),
+    )
+    db.add(period)
+    db.commit()
+    db.refresh(period)
+    return period
+
+
+@pytest.fixture
 def test_fixtures() -> TestFixtures:
     """Provide access to test fixtures."""
     return TestFixtures()

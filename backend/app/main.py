@@ -7,7 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.api import auth, calculations, periods
+from app.api import auth, calculations, holders, periods
 from app.middleware import (
     ErrorHandlingMiddleware,
     sqlalchemy_exception_handler,
@@ -53,6 +53,7 @@ app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
 
 # Include routers
 app.include_router(auth.router)
+app.include_router(holders.router)
 app.include_router(periods.router)
 app.include_router(calculations.router)
 

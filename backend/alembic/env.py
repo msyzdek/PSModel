@@ -9,6 +9,7 @@ from app.database import DATABASE_URL
 from app.models.base import Base
 
 # Import all models to ensure they are registered with Base.metadata
+from app.models.holder import Holder  # noqa: F401
 from app.models.holder_allocation import HolderAllocation  # noqa: F401
 from app.models.monthly_period import MonthlyPeriod  # noqa: F401
 

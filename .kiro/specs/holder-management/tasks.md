@@ -33,7 +33,7 @@
 
 ## Feature 1: Basic Holder CRUD (Backend + Frontend)
 
-- [ ] 5. Implement HolderService
+- [x] 5. Implement HolderService
   - Create `backend/app/services/holder_service.py` with HolderService class
   - Implement create_holder with name uniqueness validation
   - Implement get_holder, get_holder_by_name, list_holders methods
@@ -42,13 +42,13 @@
   - Implement get_or_create_holder for seamless holder creation
   - _Requirements: 1.2, 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 6. Create Holder Pydantic schemas
+- [x] 6. Create Holder Pydantic schemas
   - Create `backend/app/schemas/holder.py` with HolderCreate, HolderUpdate, HolderResponse schemas
   - Add validation for name (non-empty, max 255 chars) and default_shares (positive integer)
   - Create HolderWithStats schema for holder details with participation info
   - _Requirements: 1.2, 4.1, 5.1_
 
-- [ ] 7. Implement Holder API endpoints
+- [x] 7. Implement Holder API endpoints
   - Create `backend/app/api/holders.py` with holder router
   - Implement POST /api/holders to create holder
   - Implement GET /api/holders to list holders with active_only filter
@@ -59,13 +59,13 @@
   - Register router in main application
   - _Requirements: 1.1, 1.3, 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 8. Create frontend Holder type definitions and API client
+- [x] 8. Create frontend Holder type definitions and API client
   - Create `frontend/lib/types/holder.ts` with Holder, HolderFormData, HolderWithStats interfaces
   - Create `frontend/lib/api/holders.ts` with API client functions (createHolder, getHolders, getHolder, updateHolder, deactivateHolder)
   - Add error handling and type safety to API calls
   - _Requirements: 1.1, 1.3, 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 9. Create HolderForm component
+- [x] 9. Create HolderForm component
   - Create `frontend/components/features/HolderForm.tsx` for creating/editing holders
   - Add form fields for name and default_shares
   - Implement form validation (required name, positive default_shares)
@@ -73,7 +73,7 @@
   - Show loading and error states
   - _Requirements: 1.2, 4.1, 4.2, 5.1_
 
-- [ ] 10. Create HolderList component
+- [x] 10. Create HolderList component
   - Create `frontend/components/features/HolderList.tsx` to display holder table
   - Show columns for name, default_shares, and actions (edit, deactivate)
   - Implement edit action to open HolderForm in modal
@@ -81,7 +81,7 @@
   - Show empty state when no holders exist
   - _Requirements: 1.3, 4.3, 4.4_
 
-- [ ] 11. Create Holder management page
+- [x] 11. Create Holder management page
   - Create `frontend/app/holders/page.tsx` as main holder management interface
   - Display HolderList component
   - Add "New Holder" button to open HolderForm modal
@@ -90,7 +90,7 @@
   - Show success/error toasts for operations
   - _Requirements: 1.1, 1.2, 1.3, 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 12. Add navigation link to holder management
+- [x] 12. Add navigation link to holder management
   - Update main navigation in `frontend/app/layout.tsx` or navigation component
   - Add "Holders" link to /holders page
   - Update home page to include link to holder management

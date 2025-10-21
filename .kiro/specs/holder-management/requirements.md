@@ -71,62 +71,38 @@ This feature will introduce a persistent holder management system where holders 
 4. WHEN updating default shares THEN the system SHALL NOT affect existing periods
 5. IF no default shares are set THEN the system SHALL require entering shares for each period
 
-### Requirement 6: Holder Selection UI
+### Requirement 6: Bulk Period Entry Interface
 
-**User Story:** As a user, I want an intuitive interface for selecting holders when creating a period, so that I can quickly set up a new period.
-
-#### Acceptance Criteria
-
-1. WHEN creating a period THEN the system SHALL display a list of active holders with checkboxes
-2. WHEN selecting a holder THEN the system SHALL pre-populate their default shares
-3. WHEN deselecting a holder THEN the system SHALL remove them from the period
-4. WHEN all holders are selected THEN the system SHALL provide a "Select All" option
-5. WHEN viewing the selection THEN the system SHALL show holder name, default shares, and status
-
-### Requirement 7: Backward Compatibility
-
-**User Story:** As a user with existing periods, I want the new holder system to work with my historical data, so that I don't lose any information.
+**User Story:** As a user, I want to view and edit multiple periods in a spreadsheet-like interface, so that I can efficiently manage monthly data without opening separate wizards for each period.
 
 #### Acceptance Criteria
 
-1. WHEN the system upgrades THEN it SHALL migrate existing holder names to the master list
-2. WHEN viewing old periods THEN the system SHALL display holder information correctly
-3. WHEN creating new periods THEN the system SHALL use the new holder management system
-4. IF duplicate holder names exist THEN the system SHALL consolidate them into single master records
-5. WHEN migration completes THEN the system SHALL preserve all historical calculations and carry-forwards
+1. WHEN viewing the period entry page THEN the system SHALL display a table with holders as rows and months as columns
+2. WHEN viewing the table THEN the system SHALL show the most recent 12 months by default
+3. WHEN clicking on a cell THEN the system SHALL allow inline editing of shares and personal charges
+4. WHEN editing a cell THEN the system SHALL save changes automatically or with a single save action
+5. WHEN scrolling horizontally THEN the system SHALL allow viewing additional months
+6. WHEN a holder is added THEN the system SHALL add a new row to the table
+7. WHEN viewing the table THEN the system SHALL highlight cells with unsaved changes
+8. WHEN a period doesn't exist THEN the system SHALL show empty cells that can be filled in
+9. WHEN hovering over a cell THEN the system SHALL show a tooltip with calculation details
+10. WHEN viewing the table THEN the system SHALL freeze the holder name column for easy scrolling
 
-### Requirement 8: Holder Search and Filter
+### Requirement 7: Spreadsheet-Style Multi-Period View
 
-**User Story:** As a user with many holders, I want to search and filter the holder list, so that I can quickly find specific holders.
-
-#### Acceptance Criteria
-
-1. WHEN viewing the holder list THEN the system SHALL provide a search box
-2. WHEN typing in search THEN the system SHALL filter holders by name in real-time
-3. WHEN filtering by status THEN the system SHALL show only active or inactive holders
-4. WHEN sorting the list THEN the system SHALL allow sorting by name or participation count
-5. WHEN no results match THEN the system SHALL display a helpful message
-
-### Requirement 9: Holder Validation
-
-**User Story:** As a user, I want the system to validate holder data, so that I can avoid errors and inconsistencies.
+**User Story:** As a user, I want to view and edit multiple periods in a spreadsheet-like table, so that I can efficiently manage data across months without opening separate wizards.
 
 #### Acceptance Criteria
 
-1. WHEN creating a holder THEN the system SHALL prevent duplicate names
-2. WHEN entering holder name THEN the system SHALL require non-empty names
-3. WHEN setting default shares THEN the system SHALL require positive integer values
-4. WHEN creating a period THEN the system SHALL require at least one holder to be selected
-5. IF validation fails THEN the system SHALL display clear error messages
+1. WHEN viewing the period management page THEN the system SHALL display a table with holders as rows and months as columns
+2. WHEN viewing the table THEN the system SHALL show the most recent 12 months by default
+3. WHEN clicking on a cell THEN the system SHALL allow inline editing of that holder's data for that month
+4. WHEN editing a cell THEN the system SHALL show inputs for shares and personal charges
+5. WHEN saving changes THEN the system SHALL recalculate affected periods automatically
+6. WHEN a period doesn't exist THEN the system SHALL show empty cells that can be filled to create the period
+7. WHEN viewing the table THEN the system SHALL freeze the holder name column for horizontal scrolling
+8. WHEN viewing the table THEN the system SHALL show calculated payouts in each cell (read-only)
+9. WHEN hovering over a cell THEN the system SHALL show a tooltip with calculation breakdown
+10. WHEN clicking a month header THEN the system SHALL allow editing period-level data (net income, draws, etc.)
 
-### Requirement 10: Holder Analytics
 
-**User Story:** As a user, I want to see holder participation history, so that I can understand holder involvement over time.
-
-#### Acceptance Criteria
-
-1. WHEN viewing a holder THEN the system SHALL show total periods participated
-2. WHEN viewing a holder THEN the system SHALL show date range of participation
-3. WHEN viewing a holder THEN the system SHALL show total payouts received
-4. WHEN viewing a holder THEN the system SHALL show average shares held
-5. WHEN viewing a holder THEN the system SHALL provide a link to view all their periods

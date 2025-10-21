@@ -50,6 +50,12 @@ export function AppHeader() {
                 Dashboard
               </Link>
               <Link
+                href="/holders"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100"
+              >
+                Holders
+              </Link>
+              <Link
                 href="/period/new"
                 className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >

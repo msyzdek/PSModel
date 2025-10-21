@@ -1,7 +1,7 @@
 """SQLAlchemy model for HolderAllocation."""
 
 from decimal import Decimal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import DECIMAL, Boolean, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 
 if TYPE_CHECKING:
+    from .holder import Holder
     from .monthly_period import MonthlyPeriod
 
 
@@ -21,6 +22,9 @@ class HolderAllocation(Base):
     period_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("monthly_periods.id", ondelete="CASCADE"), nullable=False
     )
+    holder_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("holders.id", ondelete="RESTRICT"), nullable=True
+    )
     holder_name: Mapped[str] = mapped_column(String(255), nullable=False)
     shares: Mapped[int] = mapped_column(Integer, nullable=False)
     personal_charges: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=0)
@@ -30,8 +34,9 @@ class HolderAllocation(Base):
     carry_forward_out: Mapped[Decimal] = mapped_column(DECIMAL(12, 2), nullable=False, default=0)
     received_rounding_adjustment: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    # Relationship to monthly period
+    # Relationships
     period: Mapped["MonthlyPeriod"] = relationship("MonthlyPeriod", back_populates="allocations")
+    holder: Mapped[Optional["Holder"]] = relationship("Holder", back_populates="allocations")
 
     def __repr__(self) -> str:
         """String representation of HolderAllocation."""
