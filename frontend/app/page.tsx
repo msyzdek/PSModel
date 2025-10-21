@@ -5,19 +5,7 @@ import { usePeriods } from '@/lib/hooks/usePeriods';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function formatMonth(month: number): string {
-  return new Date(2000, month - 1).toLocaleString('default', { month: 'long' });
-}
+import { formatCurrency, getMonthName } from '@/lib/utils';
 
 export default function Home() {
   const { data: periods, loading, error } = usePeriods(12);
@@ -105,7 +93,7 @@ export default function Home() {
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">Latest Period</dt>
                       <dd className="text-lg font-semibold text-gray-900">
-                        {formatMonth(latestPeriod.month)} {latestPeriod.year}
+                        {getMonthName(latestPeriod.month)} {latestPeriod.year}
                       </dd>
                     </dl>
                   </div>
@@ -215,7 +203,7 @@ export default function Home() {
                 <tr key={period.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
-                      {formatMonth(period.month)} {period.year}
+                      {getMonthName(period.month)} {period.year}
                     </div>
                     <div className="text-sm text-gray-500">
                       {new Date(period.created_at).toLocaleDateString()}

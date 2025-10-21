@@ -1,22 +1,10 @@
 'use client';
 
 import { PeriodSummary } from '@/lib/types/period';
+import { formatCurrency, getMonthName } from '@/lib/utils';
 
 interface CalculationSummaryProps {
   summary: PeriodSummary;
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function formatMonth(month: number): string {
-  return new Date(2000, month - 1).toLocaleString('default', { month: 'long' });
 }
 
 export function CalculationSummary({ summary }: CalculationSummaryProps) {
@@ -54,7 +42,7 @@ export function CalculationSummary({ summary }: CalculationSummaryProps) {
       {/* Period Header */}
       <div className="border-b border-gray-200 pb-4">
         <h2 className="text-2xl font-bold text-gray-900">
-          {formatMonth(period.month)} {period.year} - Profit Share Summary
+          {getMonthName(period.month)} {period.year} - Profit Share Summary
         </h2>
       </div>
 

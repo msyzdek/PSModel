@@ -2,30 +2,13 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { getMonthName, getPreviousMonth, getNextMonth } from '@/lib/utils';
 
 interface PeriodNavigatorProps {
   currentYear?: number;
   currentMonth?: number;
   onNavigate?: (year: number, month: number) => void;
   onCreateNew?: () => void;
-}
-
-function formatMonth(month: number): string {
-  return new Date(2000, month - 1).toLocaleString('default', { month: 'long' });
-}
-
-function getPreviousMonth(year: number, month: number): { year: number; month: number } {
-  if (month === 1) {
-    return { year: year - 1, month: 12 };
-  }
-  return { year, month: month - 1 };
-}
-
-function getNextMonth(year: number, month: number): { year: number; month: number } {
-  if (month === 12) {
-    return { year: year + 1, month: 1 };
-  }
-  return { year, month: month + 1 };
 }
 
 export function PeriodNavigator({
@@ -128,7 +111,7 @@ export function PeriodNavigator({
           >
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
               <option key={m} value={m}>
-                {formatMonth(m)}
+                {getMonthName(m)}
               </option>
             ))}
           </select>
@@ -169,7 +152,7 @@ export function PeriodNavigator({
 
       <div className="flex items-center gap-4">
         <div className="text-sm font-medium text-gray-900">
-          {formatMonth(displayMonth)} {displayYear}
+          {getMonthName(displayMonth)} {displayYear}
         </div>
 
         <button

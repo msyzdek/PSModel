@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsAuthenticated(false);
         setUsername(null);
       }
-    } catch (error) {
+    } catch {
       setIsAuthenticated(false);
       setUsername(null);
     } finally {

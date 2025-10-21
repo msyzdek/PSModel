@@ -6,24 +6,7 @@ import { CalculationSummary } from '@/components/features/CalculationSummary';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { usePeriod } from '@/lib/hooks/usePeriod';
-
-function formatMonth(month: number): string {
-  return new Date(2000, month - 1).toLocaleString('default', { month: 'long' });
-}
-
-function getPreviousMonth(year: number, month: number): { year: number; month: number } {
-  if (month === 1) {
-    return { year: year - 1, month: 12 };
-  }
-  return { year, month: month - 1 };
-}
-
-function getNextMonth(year: number, month: number): { year: number; month: number } {
-  if (month === 12) {
-    return { year: year + 1, month: 1 };
-  }
-  return { year, month: month + 1 };
-}
+import { getMonthName, getPreviousMonth, getNextMonth } from '@/lib/utils';
 
 export default function PeriodSummaryPage() {
   const params = useParams();
@@ -81,7 +64,7 @@ export default function PeriodSummaryPage() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900">Period Not Found</h2>
           <p className="mt-2 text-sm text-gray-600">
-            The period for {formatMonth(month)} {year} does not exist.
+            The period for {getMonthName(month)} {year} does not exist.
           </p>
           <div className="mt-6">
             <Link
@@ -155,7 +138,7 @@ export default function PeriodSummaryPage() {
         </button>
 
         <div className="text-lg font-semibold text-gray-900">
-          {formatMonth(month)} {year}
+          {getMonthName(month)} {year}
         </div>
 
         <button

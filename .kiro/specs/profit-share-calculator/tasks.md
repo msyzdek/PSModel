@@ -250,14 +250,14 @@
     - Add toast notifications for errors
     - _Requirements: 2.6, 2.7_
 
-- [ ] 12. Add formatting and display utilities
-  - [ ] 12.1 Create currency formatting utilities
+- [x] 12. Add formatting and display utilities
+  - [x] 12.1 Create currency formatting utilities
     - Format numbers as currency with $ and commas
     - Handle negative values with proper display
     - Round to 2 decimal places for display
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-  - [ ] 12.2 Create date formatting utilities
+  - [x] 12.2 Create date formatting utilities
     - Format month/year for display
     - Parse month/year from URL params
     - Generate month/year options for selectors
