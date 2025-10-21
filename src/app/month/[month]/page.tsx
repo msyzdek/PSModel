@@ -1,0 +1,606 @@
+import { Prisma } from "@prisma/client";
+import { revalidatePath } from "next/cache";
+import { notFound, redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+
+import { calculatePeriod } from "@/lib/calculation";
+import { MONTH_NAMES, formatYearMonth, parseYearMonth } from "@/lib/date";
+import { prisma } from "@/lib/prisma";
+
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const numberFormatter = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 6,
+});
+
+type MonthContext = {
+  year: number;
+  month: number;
+  monthLabel: string;
+  periodId: string | null;
+  periodValues: {
+    netIncomeQB: number;
+    psAddBack: number;
+    ownerSalary: number;
+  };
+  shareholders: {
+    id: string;
+    name: string;
+  }[];
+  shareInputs: { shareholderId: string; shares: number }[];
+  personalChargeInputs: { shareholderId: string; amount: number }[];
+  carryForwardIn: Record<string, number>;
+  calculation: ReturnType<typeof calculatePeriod>;
+};
+
+async function getMonthContext(yearMonthParam: string): Promise<MonthContext> {
+  const { year, month } = parseYearMonth(yearMonthParam);
+  const monthLabel = `${MONTH_NAMES[month - 1] ?? "Month"} ${year}`;
+
+  const shareholders = await prisma.shareholder.findMany({
+    where: { active: true },
+    orderBy: { name: "asc" },
+  });
+
+  const periods = await prisma.period.findMany({
+    orderBy: { month: "asc" },
+    include: {
+      shareAllocations: true,
+      personalCharges: true,
+    },
+  });
+
+  const carryForwardState: Record<string, number> = {};
+  let carryForwardInForTarget: Record<string, number> | null = null;
+  let periodForTarget: (typeof periods)[number] | null = null;
+  let previousShareDefaults = new Map<string, number>();
+
+  for (const period of periods) {
+    const carryIn = { ...carryForwardState };
+
+    if (period.month === yearMonthParam) {
+      carryForwardInForTarget = carryIn;
+    }
+
+    const result = calculatePeriod({
+      netIncomeQB: Number(period.netIncomeQB),
+      psAddBack: Number(period.psAddBack),
+      ownerSalary: Number(period.ownerSalary),
+      shares: period.shareAllocations.map((allocation) => ({
+        shareholderId: allocation.shareholderId,
+        shares: Number(allocation.shares),
+      })),
+      personalCharges: period.personalCharges.map((charge) => ({
+        shareholderId: charge.shareholderId,
+        amount: Number(charge.amount),
+      })),
+      carryForwardIn: carryIn,
+    });
+
+    if (period.month === yearMonthParam) {
+      periodForTarget = period;
+    }
+
+    if (period.month < yearMonthParam) {
+      previousShareDefaults = new Map(
+        period.shareAllocations.map((allocation) => [
+          allocation.shareholderId,
+          Number(allocation.shares),
+        ]),
+      );
+    }
+
+    const nextCarry: Record<string, number> = {};
+    result.rows.forEach((row) => {
+      if (row.carryForwardOut > 0) {
+        nextCarry[row.shareholderId] = row.carryForwardOut;
+      }
+    });
+
+    Object.keys(carryForwardState).forEach((key) => {
+      delete carryForwardState[key];
+    });
+    Object.entries(nextCarry).forEach(([key, value]) => {
+      carryForwardState[key] = value;
+    });
+  }
+
+  if (!carryForwardInForTarget) {
+    carryForwardInForTarget = { ...carryForwardState };
+  }
+
+  const periodValues = periodForTarget
+    ? {
+        netIncomeQB: Number(periodForTarget.netIncomeQB),
+        psAddBack: Number(periodForTarget.psAddBack),
+        ownerSalary: Number(periodForTarget.ownerSalary),
+      }
+    : { netIncomeQB: 0, psAddBack: 0, ownerSalary: 0 };
+
+  const shareDefaults = periodForTarget
+    ? new Map(
+        periodForTarget.shareAllocations.map((allocation) => [
+          allocation.shareholderId,
+          Number(allocation.shares),
+        ]),
+      )
+    : previousShareDefaults;
+
+  const personalDefaults = periodForTarget
+    ? new Map(
+        periodForTarget.personalCharges.map((charge) => [
+          charge.shareholderId,
+          Number(charge.amount),
+        ]),
+      )
+    : new Map<string, number>();
+
+  const shareInputs = shareholders.map((holder) => ({
+    shareholderId: holder.id,
+    shares: shareDefaults.get(holder.id) ?? 0,
+  }));
+
+  const personalChargeInputs = shareholders.map((holder) => ({
+    shareholderId: holder.id,
+    amount: personalDefaults.get(holder.id) ?? 0,
+  }));
+
+  const calculation = calculatePeriod({
+    netIncomeQB: periodValues.netIncomeQB,
+    psAddBack: periodValues.psAddBack,
+    ownerSalary: periodValues.ownerSalary,
+    shares: shareInputs,
+    personalCharges: personalChargeInputs,
+    carryForwardIn: carryForwardInForTarget,
+  });
+
+  return {
+    year,
+    month,
+    monthLabel,
+    periodId: periodForTarget?.id ?? null,
+    periodValues,
+    shareholders: shareholders.map((holder) => ({ id: holder.id, name: holder.name })),
+    shareInputs,
+    personalChargeInputs,
+    carryForwardIn: carryForwardInForTarget,
+    calculation,
+  };
+}
+
+async function ensurePeriod(monthKey: string) {
+  let period = await prisma.period.findUnique({ where: { month: monthKey } });
+  if (!period) {
+    period = await prisma.period.create({
+      data: {
+        month: monthKey,
+        netIncomeQB: new Prisma.Decimal(0),
+        psAddBack: new Prisma.Decimal(0),
+        ownerSalary: new Prisma.Decimal(0),
+      },
+    });
+  }
+  return period;
+}
+
+async function upsertShareAllocations(
+  monthKey: string,
+  entries: { shareholderId: string; shares: number }[],
+) {
+  const period = await ensurePeriod(monthKey);
+
+  await prisma.$transaction(
+    entries.map((entry) =>
+      prisma.shareAllocation.upsert({
+        where: {
+          periodId_shareholderId: {
+            periodId: period.id,
+            shareholderId: entry.shareholderId,
+          },
+        },
+        update: {
+          shares: new Prisma.Decimal(entry.shares),
+        },
+        create: {
+          periodId: period.id,
+          shareholderId: entry.shareholderId,
+          shares: new Prisma.Decimal(entry.shares),
+        },
+      }),
+    ),
+  );
+}
+
+async function upsertPersonalCharges(
+  monthKey: string,
+  entries: { shareholderId: string; amount: number }[],
+) {
+  const period = await ensurePeriod(monthKey);
+
+  await prisma.$transaction(
+    entries.map((entry) =>
+      prisma.personalCharge.upsert({
+        where: {
+          periodId_shareholderId: {
+            periodId: period.id,
+            shareholderId: entry.shareholderId,
+          },
+        },
+        update: {
+          amount: new Prisma.Decimal(entry.amount),
+        },
+        create: {
+          periodId: period.id,
+          shareholderId: entry.shareholderId,
+          amount: new Prisma.Decimal(entry.amount),
+        },
+      }),
+    ),
+  );
+}
+
+async function updatePeriodValues(monthKey: string, values: {
+  netIncomeQB: number;
+  psAddBack: number;
+  ownerSalary: number;
+}) {
+  await prisma.period.upsert({
+    where: { month: monthKey },
+    update: {
+      netIncomeQB: new Prisma.Decimal(values.netIncomeQB),
+      psAddBack: new Prisma.Decimal(values.psAddBack),
+      ownerSalary: new Prisma.Decimal(values.ownerSalary),
+    },
+    create: {
+      month: monthKey,
+      netIncomeQB: new Prisma.Decimal(values.netIncomeQB),
+      psAddBack: new Prisma.Decimal(values.psAddBack),
+      ownerSalary: new Prisma.Decimal(values.ownerSalary),
+    },
+  });
+}
+
+function parseNumberField(value: FormDataEntryValue | null, options?: { allowNegative?: boolean }) {
+  if (value === null || value === undefined || value === "") {
+    return 0;
+  }
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) {
+    return 0;
+  }
+  if (!options?.allowNegative && parsed < 0) {
+    return 0;
+  }
+  return parsed;
+}
+
+async function revalidateForMonth(monthKey: string) {
+  const { year } = parseYearMonth(monthKey);
+  revalidatePath(`/month/${monthKey}`);
+  revalidatePath(`/year/${year}`);
+}
+
+async function handlePeriodForm(formData: FormData) {
+  "use server";
+
+  const month = (formData.get("month") as string) ?? "";
+  if (!month) {
+    redirect("/");
+  }
+
+  const netIncomeQB = parseNumberField(formData.get("net_income_qb"), {
+    allowNegative: true,
+  });
+  const psAddBack = parseNumberField(formData.get("ps_addback"), {
+    allowNegative: true,
+  });
+  const ownerSalary = parseNumberField(formData.get("owner_salary"), {
+    allowNegative: true,
+  });
+
+  await updatePeriodValues(month, { netIncomeQB, psAddBack, ownerSalary });
+  await revalidateForMonth(month);
+}
+
+async function handleSharesForm(formData: FormData) {
+  "use server";
+
+  const month = (formData.get("month") as string) ?? "";
+  if (!month) {
+    redirect("/");
+  }
+
+  const entries: { shareholderId: string; shares: number }[] = [];
+  formData.forEach((value, key) => {
+    if (key.startsWith("share_")) {
+      const shareholderId = key.replace("share_", "");
+      const shares = parseNumberField(value, { allowNegative: false });
+      entries.push({ shareholderId, shares });
+    }
+  });
+
+  await upsertShareAllocations(month, entries);
+  await revalidateForMonth(month);
+}
+
+async function handlePersonalChargesForm(formData: FormData) {
+  "use server";
+
+  const month = (formData.get("month") as string) ?? "";
+  if (!month) {
+    redirect("/");
+  }
+
+  const entries: { shareholderId: string; amount: number }[] = [];
+  formData.forEach((value, key) => {
+    if (key.startsWith("charge_")) {
+      const shareholderId = key.replace("charge_", "");
+      const amount = parseNumberField(value, { allowNegative: false });
+      entries.push({ shareholderId, amount });
+    }
+  });
+
+  await upsertPersonalCharges(month, entries);
+  await revalidateForMonth(month);
+}
+
+interface MonthPageProps {
+  params: { month: string };
+}
+
+export default async function MonthPage({ params }: MonthPageProps) {
+  if (!/^\d{4}-\d{2}$/.test(params.month)) {
+    notFound();
+  }
+  const parsed = parseYearMonth(params.month);
+  if (
+    Number.isNaN(parsed.year) ||
+    Number.isNaN(parsed.month) ||
+    parsed.month < 1 ||
+    parsed.month > 12
+  ) {
+    notFound();
+  }
+  const context = await getMonthContext(params.month);
+
+  const { year, month } = context;
+  const prevMonthKey = formatYearMonth(month === 1 ? year - 1 : year, month === 1 ? 12 : month - 1);
+  const nextMonthKey = formatYearMonth(month === 12 ? year + 1 : year, month === 12 ? 1 : month + 1);
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">{context.monthLabel}</h1>
+          <p className="text-sm text-slate-600">Manual inputs and calculated payouts in USD.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <a
+            href={`/month/${prevMonthKey}`}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+          >
+            ← {prevMonthKey}
+          </a>
+          <a
+            href={`/month/${nextMonthKey}`}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+          >
+            {nextMonthKey} →
+          </a>
+        </div>
+      </div>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Period inputs</h2>
+            <p className="text-sm text-slate-600">QuickBooks net income, PS add-back, and owner salary.</p>
+          </div>
+        </div>
+        <form action={handlePeriodForm} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <input type="hidden" name="month" value={params.month} />
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">Net income (QBO)</span>
+            <input
+              type="number"
+              name="net_income_qb"
+              step="0.01"
+              defaultValue={context.periodValues.netIncomeQB}
+              className="rounded-md border border-slate-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">PS add-back</span>
+            <input
+              type="number"
+              name="ps_addback"
+              step="0.01"
+              defaultValue={context.periodValues.psAddBack}
+              className="rounded-md border border-slate-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">Owner salary</span>
+            <input
+              type="number"
+              name="owner_salary"
+              step="0.01"
+              defaultValue={context.periodValues.ownerSalary}
+              className="rounded-md border border-slate-300 px-3 py-2"
+            />
+          </label>
+          <div className="sm:col-span-2 lg:col-span-3">
+            <button
+              type="submit"
+              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+            >
+              Save period inputs
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">Shares</h2>
+          <p className="text-sm text-slate-600">Monthly shares per shareholder. Defaults copy from previous month.</p>
+        </div>
+        <form action={handleSharesForm} className="space-y-3">
+          <input type="hidden" name="month" value={params.month} />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {context.shareInputs.map((entry) => {
+              const holder = context.shareholders.find((h) => h.id === entry.shareholderId);
+              return (
+                <label key={entry.shareholderId} className="flex flex-col gap-1 text-sm">
+                  <span className="font-medium">{holder?.name ?? entry.shareholderId}</span>
+                  <input
+                    type="number"
+                    name={`share_${entry.shareholderId}`}
+                    step="0.0001"
+                    min="0"
+                    defaultValue={entry.shares}
+                    className="rounded-md border border-slate-300 px-3 py-2"
+                  />
+                </label>
+              );
+            })}
+          </div>
+          <button
+            type="submit"
+            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+          >
+            Save shares
+          </button>
+        </form>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">Personal charges</h2>
+          <p className="text-sm text-slate-600">Personal expenses per holder. Added back to pool but deducted from payout.</p>
+        </div>
+        <form action={handlePersonalChargesForm} className="space-y-3">
+          <input type="hidden" name="month" value={params.month} />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {context.personalChargeInputs.map((entry) => {
+              const holder = context.shareholders.find((h) => h.id === entry.shareholderId);
+              return (
+                <label key={entry.shareholderId} className="flex flex-col gap-1 text-sm">
+                  <span className="font-medium">{holder?.name ?? entry.shareholderId}</span>
+                  <input
+                    type="number"
+                    name={`charge_${entry.shareholderId}`}
+                    step="0.01"
+                    min="0"
+                    defaultValue={entry.amount}
+                    className="rounded-md border border-slate-300 px-3 py-2"
+                  />
+                </label>
+              );
+            })}
+          </div>
+          <button
+            type="submit"
+            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+          >
+            Save personal charges
+          </button>
+        </form>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Calculated payouts</h2>
+            <p className="text-sm text-slate-600">
+              Based on inputs above with zero floor and carry-forward of deficits.
+            </p>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50">
+                <th className="px-3 py-2 text-left font-medium text-slate-600">Shareholder</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600">Shares</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600">Share %</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600">Pre-share</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600">Personal</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600">Carry-in</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600">Payout</th>
+                <th className="px-3 py-2 text-right font-medium text-slate-600">Carry-out</th>
+              </tr>
+            </thead>
+            <tbody>
+              {context.calculation.rows.map((row) => {
+                const holder = context.shareholders.find((h) => h.id === row.shareholderId);
+                return (
+                  <tr key={row.shareholderId} className="border-b border-slate-100">
+                    <td className="px-3 py-2 font-medium text-slate-700">{holder?.name ?? row.shareholderId}</td>
+                    <td className="px-3 py-2 text-right text-slate-700">{numberFormatter.format(row.shares)}</td>
+                    <td className="px-3 py-2 text-right text-slate-700">
+                      {(row.shareRatio * 100).toFixed(2)}%
+                    </td>
+                    <td className="px-3 py-2 text-right text-slate-700">
+                      {currencyFormatter.format(row.preShare)}
+                    </td>
+                    <td className="px-3 py-2 text-right text-slate-700">
+                      {currencyFormatter.format(row.personalCharge)}
+                    </td>
+                    <td className="px-3 py-2 text-right text-slate-700">
+                      {currencyFormatter.format(row.carryForwardIn)}
+                    </td>
+                    <td className="px-3 py-2 text-right font-semibold text-slate-900">
+                      {currencyFormatter.format(row.payoutRounded)}
+                    </td>
+                    <td className="px-3 py-2 text-right text-slate-700">
+                      {currencyFormatter.format(row.carryForwardOut)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-slate-200 bg-slate-50">
+                <td className="px-3 py-2 text-left font-semibold text-slate-700">Totals</td>
+                <td className="px-3 py-2 text-right font-semibold text-slate-700">
+                  {numberFormatter.format(context.calculation.totalShares)}
+                </td>
+                <td className="px-3 py-2 text-right text-slate-700">
+                  {context.calculation.totalShares > 0 ? "100%" : "—"}
+                </td>
+                <td className="px-3 py-2 text-right font-semibold text-slate-700">
+                  {currencyFormatter.format(context.calculation.adjustedPool)}
+                </td>
+                <td className="px-3 py-2 text-right font-semibold text-slate-700">
+                  {currencyFormatter.format(context.calculation.personalAddBackTotal)}
+                </td>
+                <td className="px-3 py-2 text-right text-slate-700">—</td>
+                <td className="px-3 py-2 text-right font-semibold text-slate-900">
+                  {currencyFormatter.format(context.calculation.actualRoundedTotal)}
+                </td>
+                <td className="px-3 py-2 text-right font-semibold text-slate-700">
+                  {currencyFormatter.format(
+                    context.calculation.rows.reduce((acc, row) => acc + row.carryForwardOut, 0),
+                  )}
+                </td>
+              </tr>
+              <tr>
+                <td className="px-3 py-2 text-left text-sm text-slate-500" colSpan={8}>
+                  Rounding delta applied: {currencyFormatter.format(context.calculation.roundingDelta)}.
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
