@@ -394,34 +394,40 @@ export default async function MonthPage({ params }: MonthPageProps) {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{context.monthLabel}</h1>
-          <p className="text-sm text-slate-600">Manual inputs and calculated payouts in USD.</p>
+      <section className="rounded-3xl bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-primary-light)] px-8 py-10 text-white shadow-xl">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-3">
+            <p className="text-sm uppercase tracking-[0.3em] text-white/80">Monthly Detail</p>
+            <h1 className="text-4xl font-semibold md:text-5xl">{context.monthLabel}</h1>
+            <p className="max-w-2xl text-base text-white/80">
+              Update period adjustments, shareholder shares, and personal expenses. All changes save together to keep
+              payouts in sync.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <a
+              href={`/month/${prevMonthKey}`}
+              className="inline-flex items-center justify-center rounded-full border border-white/50 px-5 py-2 text-sm font-semibold text-white transition hover:border-white"
+            >
+              ← {prevMonthKey}
+            </a>
+            <a
+              href={`/month/${nextMonthKey}`}
+              className="inline-flex items-center justify-center rounded-full border border-white/50 px-5 py-2 text-sm font-semibold text-white transition hover:border-white"
+            >
+              {nextMonthKey} →
+            </a>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <a
-            href={`/month/${prevMonthKey}`}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100"
-          >
-            ← {prevMonthKey}
-          </a>
-          <a
-            href={`/month/${nextMonthKey}`}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100"
-          >
-            {nextMonthKey} →
-          </a>
-        </div>
-      </div>
+      </section>
 
       <form action={handleSaveAll} className="space-y-8">
         <input type="hidden" name="month" value={params.month} />
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold">Period inputs</h2>
-            <p className="text-sm text-slate-600">
+        <section className="rounded-3xl bg-[var(--card-bg)] p-6 shadow-lg">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-[var(--brand-primary)]">Period inputs</h2>
+            <p className="text-sm text-[var(--brand-primary)]/70">
               QuickBooks net income plus adjustments. Positive PS values add back to the pool; owner salary,
               uncollectible, and tax optimization reduce it.
             </p>
@@ -434,7 +440,7 @@ export default async function MonthPage({ params }: MonthPageProps) {
                 inputMode="decimal"
                 name="net_income_qb"
                 defaultValue={context.periodValues.netIncomeQB}
-                className="rounded-md border border-slate-300 px-3 py-2"
+                className="rounded-xl border border-[var(--brand-muted)] bg-white px-4 py-3 text-[var(--brand-primary)] focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[var(--brand-primary)]"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -444,7 +450,7 @@ export default async function MonthPage({ params }: MonthPageProps) {
                 inputMode="decimal"
                 name="ps_addback"
                 defaultValue={context.periodValues.psAddBack}
-                className="rounded-md border border-slate-300 px-3 py-2"
+                className="rounded-xl border border-[var(--brand-muted)] bg-white px-4 py-3 text-[var(--brand-primary)] focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[var(--brand-primary)]"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -454,7 +460,7 @@ export default async function MonthPage({ params }: MonthPageProps) {
                 inputMode="decimal"
                 name="tax_optimization_return"
                 defaultValue={context.periodValues.taxOptimizationReturn}
-                className="rounded-md border border-slate-300 px-3 py-2"
+                className="rounded-xl border border-[var(--brand-muted)] bg-white px-4 py-3 text-[var(--brand-primary)] focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[var(--brand-primary)]"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -464,7 +470,7 @@ export default async function MonthPage({ params }: MonthPageProps) {
                 inputMode="decimal"
                 name="ps_payout_addback"
                 defaultValue={context.periodValues.psPayoutAddBack}
-                className="rounded-md border border-slate-300 px-3 py-2"
+                className="rounded-xl border border-[var(--brand-muted)] bg-white px-4 py-3 text-[var(--brand-primary)] focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[var(--brand-primary)]"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -474,7 +480,7 @@ export default async function MonthPage({ params }: MonthPageProps) {
                 inputMode="decimal"
                 name="owner_salary"
                 defaultValue={context.periodValues.ownerSalary}
-                className="rounded-md border border-slate-300 px-3 py-2"
+                className="rounded-xl border border-[var(--brand-muted)] bg-white px-4 py-3 text-[var(--brand-primary)] focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[var(--brand-primary)]"
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -484,26 +490,26 @@ export default async function MonthPage({ params }: MonthPageProps) {
                 inputMode="decimal"
                 name="uncollectible"
                 defaultValue={context.periodValues.uncollectible}
-                className="rounded-md border border-slate-300 px-3 py-2"
+                className="rounded-xl border border-[var(--brand-muted)] bg-white px-4 py-3 text-[var(--brand-primary)] focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[var(--brand-primary)]"
               />
             </label>
           </div>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold">Shareholders</h2>
-            <p className="text-sm text-slate-600">
+        <section className="rounded-3xl bg-[var(--card-bg)] p-6 shadow-lg">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-[var(--brand-primary)]">Shareholders</h2>
+            <p className="text-sm text-[var(--brand-primary)]/70">
               Review monthly shares and personal expenses for each shareholder.
             </p>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-2xl border border-white/40 bg-white shadow-inner">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-left text-slate-600">
-                  <th className="px-3 py-2 font-medium">Shareholder</th>
-                  <th className="px-3 py-2 font-medium">Shares</th>
-                  <th className="px-3 py-2 font-medium">Personal expenses</th>
+                <tr className="bg-[var(--brand-primary)] text-left text-white">
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em]">Shareholder</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em]">Shares</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em]">Personal expenses</th>
                 </tr>
               </thead>
               <tbody>
@@ -514,24 +520,24 @@ export default async function MonthPage({ params }: MonthPageProps) {
                   )?.amount ?? 0;
 
                   return (
-                    <tr key={holder.id} className="border-b border-slate-100">
-                      <td className="px-3 py-2 font-medium text-slate-700">{holder.name}</td>
-                      <td className="px-3 py-2">
+                    <tr key={holder.id} className="border-b border-[var(--brand-muted)]/60 odd:bg-slate-50/40">
+                      <td className="px-4 py-3 font-medium text-[var(--brand-primary)]">{holder.name}</td>
+                      <td className="px-4 py-3">
                         <input
                           type="text"
                           inputMode="decimal"
                           name={`share_${holder.id}`}
                           defaultValue={shareValue}
-                          className="w-full rounded-md border border-slate-300 px-3 py-2"
+                          className="w-full rounded-xl border border-[var(--brand-muted)] bg-white px-4 py-3 text-[var(--brand-primary)] focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[var(--brand-primary)]"
                         />
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-4 py-3">
                         <input
                           type="text"
                           inputMode="decimal"
                           name={`charge_${holder.id}`}
                           defaultValue={personalValue}
-                          className="w-full rounded-md border border-slate-300 px-3 py-2"
+                          className="w-full rounded-xl border border-[var(--brand-muted)] bg-white px-4 py-3 text-[var(--brand-primary)] focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[var(--brand-primary)]"
                         />
                       </td>
                     </tr>
@@ -542,56 +548,70 @@ export default async function MonthPage({ params }: MonthPageProps) {
           </div>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
+        <section className="rounded-3xl bg-[var(--card-bg)] p-6 shadow-lg">
+          <div className="mb-6 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold">Calculated payouts</h2>
-              <p className="text-sm text-slate-600">
+              <h2 className="text-xl font-semibold text-[var(--brand-primary)]">Calculated payouts</h2>
+              <p className="text-sm text-[var(--brand-primary)]/70">
                 Based on the inputs above with zero floor and carry-forward of deficits.
               </p>
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-2xl border border-white/40 bg-white shadow-inner">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="px-3 py-2 text-left font-medium text-slate-600">Shareholder</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-600">Shares</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-600">Share %</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-600">Pre-share</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-600">Personal</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-600">Carry-in</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-600">Payout</th>
-                  <th className="px-3 py-2 text-right font-medium text-slate-600">Carry-out</th>
+                <tr className="bg-[var(--brand-primary)] text-left text-white">
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em]">Shareholder</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-right">
+                    Shares
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-right">
+                    Share %
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-right">
+                    Pre-share
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-right">
+                    Personal
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-right">
+                    Carry-in
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-right">
+                    Payout
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-right">
+                    Carry-out
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {context.calculation.rows.map((row) => {
                   const holder = context.shareholders.find((h) => h.id === row.shareholderId);
                   return (
-                    <tr key={row.shareholderId} className="border-b border-slate-100">
-                      <td className="px-3 py-2 font-medium text-slate-700">
+                    <tr key={row.shareholderId} className="border-b border-[var(--brand-muted)]/60 odd:bg-slate-50/40">
+                      <td className="px-4 py-3 font-medium text-[var(--brand-primary)]">
                         {holder?.name ?? row.shareholderId}
                       </td>
-                      <td className="px-3 py-2 text-right text-slate-700">
+                      <td className="px-4 py-3 text-right text-[var(--brand-primary)]">
                         {numberFormatter.format(row.shares)}
                       </td>
-                      <td className="px-3 py-2 text-right text-slate-700">
+                      <td className="px-4 py-3 text-right text-[var(--brand-primary)]">
                         {(row.shareRatio * 100).toFixed(2)}%
                       </td>
-                      <td className="px-3 py-2 text-right text-slate-700">
+                      <td className="px-4 py-3 text-right text-[var(--brand-primary)]">
                         {currencyFormatter.format(row.preShare)}
                       </td>
-                      <td className="px-3 py-2 text-right text-slate-700">
+                      <td className="px-4 py-3 text-right text-[var(--brand-primary)]">
                         {currencyFormatter.format(row.personalCharge)}
                       </td>
-                      <td className="px-3 py-2 text-right text-slate-700">
+                      <td className="px-4 py-3 text-right text-[var(--brand-primary)]">
                         {currencyFormatter.format(row.carryForwardIn)}
                       </td>
-                      <td className="px-3 py-2 text-right font-semibold text-slate-900">
+                      <td className="px-4 py-3 text-right font-semibold text-[var(--brand-primary)]">
                         {currencyFormatter.format(row.payoutRounded)}
                       </td>
-                      <td className="px-3 py-2 text-right text-slate-700">
+                      <td className="px-4 py-3 text-right text-[var(--brand-primary)]">
                         {currencyFormatter.format(row.carryForwardOut)}
                       </td>
                     </tr>
@@ -599,32 +619,32 @@ export default async function MonthPage({ params }: MonthPageProps) {
                 })}
               </tbody>
               <tfoot>
-                <tr className="border-t border-slate-200 bg-slate-50">
-                  <td className="px-3 py-2 text-left font-semibold text-slate-700">Totals</td>
-                  <td className="px-3 py-2 text-right font-semibold text-slate-700">
+                <tr className="border-t border-[var(--brand-muted)] bg-slate-50/80 text-[var(--brand-primary)]">
+                  <td className="px-4 py-3 text-left font-semibold">Totals</td>
+                  <td className="px-4 py-3 text-right font-semibold">
                     {numberFormatter.format(context.calculation.totalShares)}
                   </td>
-                  <td className="px-3 py-2 text-right text-slate-700">
+                  <td className="px-4 py-3 text-right">
                     {context.calculation.totalShares > 0 ? "100%" : "—"}
                   </td>
-                  <td className="px-3 py-2 text-right font-semibold text-slate-700">
+                  <td className="px-4 py-3 text-right font-semibold">
                     {currencyFormatter.format(context.calculation.adjustedPool)}
                   </td>
-                  <td className="px-3 py-2 text-right font-semibold text-slate-700">
+                  <td className="px-4 py-3 text-right font-semibold">
                     {currencyFormatter.format(context.calculation.personalAddBackTotal)}
                   </td>
-                  <td className="px-3 py-2 text-right text-slate-700">—</td>
-                  <td className="px-3 py-2 text-right font-semibold text-slate-900">
+                  <td className="px-4 py-3 text-right">—</td>
+                  <td className="px-4 py-3 text-right font-semibold">
                     {currencyFormatter.format(context.calculation.actualRoundedTotal)}
                   </td>
-                  <td className="px-3 py-2 text-right font-semibold text-slate-700">
+                  <td className="px-4 py-3 text-right font-semibold">
                     {currencyFormatter.format(
                       context.calculation.rows.reduce((acc, row) => acc + row.carryForwardOut, 0),
                     )}
                   </td>
                 </tr>
                 <tr>
-                  <td className="px-3 py-2 text-left text-sm text-slate-500" colSpan={8}>
+                  <td className="px-4 py-3 text-left text-xs uppercase tracking-[0.2em] text-[var(--brand-primary)]/60" colSpan={8}>
                     Rounding delta applied: {currencyFormatter.format(context.calculation.roundingDelta)}.
                   </td>
                 </tr>
@@ -636,7 +656,7 @@ export default async function MonthPage({ params }: MonthPageProps) {
         <div className="flex justify-end">
           <button
             type="submit"
-            className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+            className="inline-flex items-center justify-center rounded-full bg-[var(--brand-accent)] px-8 py-3 text-base font-semibold text-white shadow-lg transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand-accent)]"
           >
             Save changes
           </button>

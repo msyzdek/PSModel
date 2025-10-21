@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Poppins, Fira_Code } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const primaryFont = Poppins({
+  variable: "--font-primary",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const monoFont = Fira_Code({
+  variable: "--font-mono",
   subsets: ["latin"],
+  weight: ["400", "500"],
 });
 
 const currentYear = new Date().getFullYear();
@@ -27,19 +29,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 text-slate-900`}
-      >
-        <div className="min-h-screen flex flex-col">
-          <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
-            <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-              <Link href={`/year/${currentYear}`} className="text-lg font-semibold">
+      <body className={`${primaryFont.variable} ${monoFont.variable} antialiased bg-[var(--background)] text-[var(--foreground)]`}>
+        <div className="flex min-h-screen flex-col">
+          <header className="bg-white/95">
+            <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6">
+              <Link href={`/year/${currentYear}`} className="text-2xl font-semibold text-[var(--brand-primary)]">
                 Profit Share
               </Link>
-              <nav className="flex items-center gap-3 text-sm font-medium text-slate-600">
+              <nav className="flex items-center gap-6 text-sm font-medium text-[var(--brand-primary)]">
                 <Link
                   href={`/year/${currentYear}`}
-                  className="rounded-md px-3 py-1.5 transition hover:bg-slate-100 hover:text-slate-900"
+                  className="transition hover:text-[var(--brand-accent)]"
                 >
                   {currentYear} Overview
                 </Link>
@@ -47,7 +47,7 @@ export default function RootLayout({
             </div>
           </header>
           <main className="flex-1">
-            <div className="mx-auto w-full max-w-6xl px-6 py-6" data-testid="main">
+            <div className="mx-auto w-full max-w-7xl px-6 py-10" data-testid="main">
               {children}
             </div>
           </main>

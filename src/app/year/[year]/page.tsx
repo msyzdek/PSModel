@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Shareholder } from "@prisma/client";
 
@@ -143,23 +144,42 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
 
   const overview = await getYearOverview(parsedYear);
   const savedMonth = searchParams?.saved ?? null;
+  const savedMonthLabel = savedMonth
+    ? (() => {
+        const { year, month } = parseYearMonth(savedMonth);
+        if (Number.isNaN(year) || Number.isNaN(month)) return null;
+        return `${MONTH_NAMES[month - 1] ?? ""} ${year}`;
+      })()
+    : null;
 
   return (
-    <div className="space-y-6">
-      {savedMonth && (
+    <div className="space-y-8">
+      {savedMonthLabel && (
         <div
-          className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+          className="rounded-md border border-[var(--brand-primary)]/20 bg-white px-4 py-3 text-sm text-[var(--brand-primary)] shadow-sm"
           role="status"
         >
-          Saved changes for {savedMonth}.
+          Saved changes for {savedMonthLabel}.
         </div>
       )}
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">{parsedYear} Profit Share</h1>
-        <p className="text-sm text-slate-600">
-          Monthly payouts shown in USD. Click a month to drill into the detailed editor.
-        </p>
-      </div>
+      <section className="rounded-3xl bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-primary-light)] px-8 py-10 text-white shadow-xl">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-3">
+            <p className="text-sm uppercase tracking-[0.3em] text-white/80">Profit Share Overview</p>
+            <h1 className="text-4xl font-semibold md:text-5xl">{parsedYear} Distribution Summary</h1>
+            <p className="max-w-2xl text-base text-white/80">
+              Track monthly operating profit, adjustments, and shareholder payouts in one place. Select a month
+              below to review or update detailed allocations.
+            </p>
+          </div>
+          <Link
+            href={`/month/${formatYearMonth(parsedYear, Math.min(new Date().getMonth() + 1, 12))}`}
+            className="inline-flex items-center justify-center rounded-full bg-[var(--brand-accent)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
+          >
+            Jump to Current Month
+          </Link>
+        </div>
+      </section>
       <YearGrid
         year={parsedYear}
         shareholders={overview.shareholders}

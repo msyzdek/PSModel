@@ -200,8 +200,9 @@ export default function YearGrid({
         field: "label",
         pinned: "left",
         lockPinned: true,
-        cellClass: "font-medium text-slate-700",
-        width: 200,
+        cellClass: "font-medium text-[var(--brand-primary)]",
+        headerClass: "ag-header-brand",
+        width: 220,
       },
     ];
 
@@ -213,9 +214,10 @@ export default function YearGrid({
         formatCurrency(params.value as number | null | undefined),
       cellClass: () =>
         field === highlightField
-          ? "text-right cursor-pointer bg-emerald-50 font-semibold text-emerald-700"
-          : "text-right cursor-pointer",
-      width: 120,
+          ? "text-right cursor-pointer bg-[var(--brand-accent)]/10 font-semibold text-[var(--brand-primary)]"
+          : "text-right cursor-pointer text-[var(--brand-primary)]",
+      headerClass: "ag-header-brand",
+      width: 130,
       colId: `month-${monthNumber}`,
     }));
 
@@ -225,7 +227,8 @@ export default function YearGrid({
       type: "numericColumn",
       valueFormatter: (params: ValueFormatterParams) =>
         formatCurrency(params.value as number | null | undefined),
-      cellClass: "text-right font-semibold",
+      cellClass: "text-right font-semibold text-[var(--brand-primary)]",
+      headerClass: "ag-header-brand",
       width: 130,
     };
 
@@ -245,10 +248,10 @@ export default function YearGrid({
   const getRowClass = (params: { data?: GridRow }): string => {
     if (!params.data) return "";
     if (params.data.type === "meta") {
-      return "bg-slate-50 font-medium";
+      return "bg-slate-50/70 font-medium";
     }
     if (params.data.type === "total") {
-      return "bg-slate-100 font-semibold";
+      return "bg-slate-100/80 font-semibold";
     }
     return "";
   };
@@ -268,7 +271,7 @@ export default function YearGrid({
   );
 
   return (
-    <div className="ag-theme-quartz rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div className="ag-theme-quartz rounded-3xl border border-white/40 bg-white/95 p-3 shadow-xl">
       <AgGridReact
         rowData={rowData}
         columnDefs={columnDefs}
