@@ -147,12 +147,7 @@ export function encodeState(state: OauthState): string {
 }
 
 export function decodeState(s: string): OauthState {
-  // restore padding
-  const padded = s.replace(/-/g, "+").replace(/_/g, "/").padEnd(
-    Math.ceil(s.length / 4) * 4,
-    "=",
-  );
-  const json = Buffer.from(padded, "base64").toString("utf8");
+  const json = Buffer.from(s, "base64url").toString("utf8");
   const obj = JSON.parse(json);
   if (!obj || typeof obj.nonce !== "string" || typeof obj.year !== "number") {
     throw new Error("Invalid OAuth state payload");
