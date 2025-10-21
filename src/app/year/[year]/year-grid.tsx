@@ -327,7 +327,6 @@ const aggregatedRows: GridRow[] = useMemo(() => {
       sortable: false,
       filter: false,
       resizable: true,
-      suppressMenu: true,
     }),
     [],
   );
