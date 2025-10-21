@@ -87,6 +87,5 @@ Approve the QuickBooks authorization for your sandbox company. You will be redir
 
 - Tokens are not persisted; we exchange and immediately call the report once.
 - No background refresh or retry/backoff yet.
-- Report response is returned as raw JSON; no parsing into monthly net income yet.
 
 If you need multi‑company or multi‑ledger support in the future, we can discuss token storage, refresh flows, and parsing into your Prisma models.
