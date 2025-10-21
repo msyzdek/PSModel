@@ -14,6 +14,9 @@ export type MonthSummary = {
   netIncomeQB: number | null;
   psAddBack: number | null;
   ownerSalary: number | null;
+  taxOptimizationReturn: number | null;
+  uncollectible: number | null;
+  psPayoutAddBack: number | null;
   personalAddBackTotal: number | null;
   adjustedPool: number | null;
   payouts: Record<string, number | null>;
@@ -49,6 +52,9 @@ async function getYearOverview(year: number): Promise<YearOverviewData> {
       netIncomeQB: Number(period.netIncomeQB),
       psAddBack: Number(period.psAddBack),
       ownerSalary: Number(period.ownerSalary),
+      taxOptimizationReturn: Number(period.taxOptimizationReturn),
+      uncollectible: Number(period.uncollectible),
+      psPayoutAddBack: Number(period.psPayoutAddBack),
       shares: period.shareAllocations.map((allocation) => ({
         shareholderId: allocation.shareholderId,
         shares: Number(allocation.shares),
@@ -72,6 +78,9 @@ async function getYearOverview(year: number): Promise<YearOverviewData> {
         netIncomeQB: Number(period.netIncomeQB),
         psAddBack: Number(period.psAddBack),
         ownerSalary: Number(period.ownerSalary),
+        taxOptimizationReturn: Number(period.taxOptimizationReturn),
+        uncollectible: Number(period.uncollectible),
+        psPayoutAddBack: Number(period.psPayoutAddBack),
         personalAddBackTotal: result.personalAddBackTotal,
         adjustedPool: result.adjustedPool,
         payouts,
@@ -106,6 +115,9 @@ async function getYearOverview(year: number): Promise<YearOverviewData> {
       netIncomeQB: null,
       psAddBack: null,
       ownerSalary: null,
+      taxOptimizationReturn: null,
+      uncollectible: null,
+      psPayoutAddBack: null,
       personalAddBackTotal: null,
       adjustedPool: null,
       payouts: {},

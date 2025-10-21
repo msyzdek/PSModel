@@ -29,6 +29,9 @@ type MonthContext = {
     netIncomeQB: number;
     psAddBack: number;
     ownerSalary: number;
+    taxOptimizationReturn: number;
+    uncollectible: number;
+    psPayoutAddBack: number;
   };
   shareholders: {
     id: string;
@@ -73,6 +76,9 @@ async function getMonthContext(yearMonthParam: string): Promise<MonthContext> {
       netIncomeQB: Number(period.netIncomeQB),
       psAddBack: Number(period.psAddBack),
       ownerSalary: Number(period.ownerSalary),
+      taxOptimizationReturn: Number(period.taxOptimizationReturn),
+      uncollectible: Number(period.uncollectible),
+      psPayoutAddBack: Number(period.psPayoutAddBack),
       shares: period.shareAllocations.map((allocation) => ({
         shareholderId: allocation.shareholderId,
         shares: Number(allocation.shares),
@@ -121,8 +127,18 @@ async function getMonthContext(yearMonthParam: string): Promise<MonthContext> {
         netIncomeQB: Number(periodForTarget.netIncomeQB),
         psAddBack: Number(periodForTarget.psAddBack),
         ownerSalary: Number(periodForTarget.ownerSalary),
+        taxOptimizationReturn: Number(periodForTarget.taxOptimizationReturn),
+        uncollectible: Number(periodForTarget.uncollectible),
+        psPayoutAddBack: Number(periodForTarget.psPayoutAddBack),
       }
-    : { netIncomeQB: 0, psAddBack: 0, ownerSalary: 0 };
+    : {
+        netIncomeQB: 0,
+        psAddBack: 0,
+        ownerSalary: 0,
+        taxOptimizationReturn: 0,
+        uncollectible: 0,
+        psPayoutAddBack: 0,
+      };
 
   const shareDefaults = periodForTarget
     ? new Map(
@@ -156,6 +172,9 @@ async function getMonthContext(yearMonthParam: string): Promise<MonthContext> {
     netIncomeQB: periodValues.netIncomeQB,
     psAddBack: periodValues.psAddBack,
     ownerSalary: periodValues.ownerSalary,
+    taxOptimizationReturn: periodValues.taxOptimizationReturn,
+    uncollectible: periodValues.uncollectible,
+    psPayoutAddBack: periodValues.psPayoutAddBack,
     shares: shareInputs,
     personalCharges: personalChargeInputs,
     carryForwardIn: carryForwardInForTarget,
@@ -184,6 +203,9 @@ async function ensurePeriod(monthKey: string) {
         netIncomeQB: new Prisma.Decimal(0),
         psAddBack: new Prisma.Decimal(0),
         ownerSalary: new Prisma.Decimal(0),
+        taxOptimizationReturn: new Prisma.Decimal(0),
+        uncollectible: new Prisma.Decimal(0),
+        psPayoutAddBack: new Prisma.Decimal(0),
       },
     });
   }
@@ -250,6 +272,9 @@ async function updatePeriodValues(monthKey: string, values: {
   netIncomeQB: number;
   psAddBack: number;
   ownerSalary: number;
+  taxOptimizationReturn: number;
+  uncollectible: number;
+  psPayoutAddBack: number;
 }) {
   await prisma.period.upsert({
     where: { month: monthKey },
@@ -257,12 +282,18 @@ async function updatePeriodValues(monthKey: string, values: {
       netIncomeQB: new Prisma.Decimal(values.netIncomeQB),
       psAddBack: new Prisma.Decimal(values.psAddBack),
       ownerSalary: new Prisma.Decimal(values.ownerSalary),
+      taxOptimizationReturn: new Prisma.Decimal(values.taxOptimizationReturn),
+      uncollectible: new Prisma.Decimal(values.uncollectible),
+      psPayoutAddBack: new Prisma.Decimal(values.psPayoutAddBack),
     },
     create: {
       month: monthKey,
       netIncomeQB: new Prisma.Decimal(values.netIncomeQB),
       psAddBack: new Prisma.Decimal(values.psAddBack),
       ownerSalary: new Prisma.Decimal(values.ownerSalary),
+      taxOptimizationReturn: new Prisma.Decimal(values.taxOptimizationReturn),
+      uncollectible: new Prisma.Decimal(values.uncollectible),
+      psPayoutAddBack: new Prisma.Decimal(values.psPayoutAddBack),
     },
   });
 }
@@ -304,8 +335,24 @@ async function handlePeriodForm(formData: FormData) {
   const ownerSalary = parseNumberField(formData.get("owner_salary"), {
     allowNegative: true,
   });
+  const taxOptimizationReturn = parseNumberField(formData.get("tax_optimization_return"), {
+    allowNegative: true,
+  });
+  const uncollectible = parseNumberField(formData.get("uncollectible"), {
+    allowNegative: true,
+  });
+  const psPayoutAddBack = parseNumberField(formData.get("ps_payout_addback"), {
+    allowNegative: true,
+  });
 
-  await updatePeriodValues(month, { netIncomeQB, psAddBack, ownerSalary });
+  await updatePeriodValues(month, {
+    netIncomeQB,
+    psAddBack,
+    ownerSalary,
+    taxOptimizationReturn,
+    uncollectible,
+    psPayoutAddBack,
+  });
   await revalidateForMonth(month);
 }
 
@@ -401,7 +448,9 @@ export default async function MonthPage({ params }: MonthPageProps) {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">Period inputs</h2>
-            <p className="text-sm text-slate-600">QuickBooks net income, PS add-back, and owner salary.</p>
+            <p className="text-sm text-slate-600">
+              QuickBooks net income with monthly adjustments (tax optimization, uncollectible, PS payouts).
+            </p>
           </div>
         </div>
         <form action={handlePeriodForm} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -433,6 +482,36 @@ export default async function MonthPage({ params }: MonthPageProps) {
               name="owner_salary"
               step="0.01"
               defaultValue={context.periodValues.ownerSalary}
+              className="rounded-md border border-slate-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">Tax optimization return</span>
+            <input
+              type="number"
+              name="tax_optimization_return"
+              step="0.01"
+              defaultValue={context.periodValues.taxOptimizationReturn}
+              className="rounded-md border border-slate-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">Uncollectible</span>
+            <input
+              type="number"
+              name="uncollectible"
+              step="0.01"
+              defaultValue={context.periodValues.uncollectible}
+              className="rounded-md border border-slate-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="font-medium">PS payouts add-back</span>
+            <input
+              type="number"
+              name="ps_payout_addback"
+              step="0.01"
+              defaultValue={context.periodValues.psPayoutAddBack}
               className="rounded-md border border-slate-300 px-3 py-2"
             />
           </label>
@@ -599,6 +678,32 @@ export default async function MonthPage({ params }: MonthPageProps) {
               </tr>
             </tfoot>
           </table>
+        </div>
+        <div className="mt-4 grid gap-1 text-xs text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
+          <span>
+            Net income: {currencyFormatter.format(context.periodValues.netIncomeQB)}
+          </span>
+          <span>
+            PS add-back: {currencyFormatter.format(context.periodValues.psAddBack)}
+          </span>
+          <span>
+            Tax optimization return: {currencyFormatter.format(context.periodValues.taxOptimizationReturn)}
+          </span>
+          <span>
+            PS payouts add-back: {currencyFormatter.format(context.periodValues.psPayoutAddBack)}
+          </span>
+          <span>
+            Owner salary: {currencyFormatter.format(-context.periodValues.ownerSalary)}
+          </span>
+          <span>
+            Uncollectible: {currencyFormatter.format(-context.periodValues.uncollectible)}
+          </span>
+          <span>
+            Personal add-back total: {currencyFormatter.format(context.calculation.personalAddBackTotal)}
+          </span>
+          <span>
+            Adjusted pool: {currencyFormatter.format(context.calculation.adjustedPool)}
+          </span>
         </div>
       </section>
     </div>

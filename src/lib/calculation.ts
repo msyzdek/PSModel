@@ -16,6 +16,9 @@ export interface PeriodCalculationInput {
   netIncomeQB: number;
   psAddBack: number;
   ownerSalary: number;
+  taxOptimizationReturn: number;
+  uncollectible: number;
+  psPayoutAddBack: number;
   shares: ShareInput[];
   personalCharges: PersonalChargeInput[];
   carryForwardIn: CarryForwardMap;
@@ -94,7 +97,13 @@ export function calculatePeriod(
     0,
   );
   const adjustedPool =
-    input.netIncomeQB + input.psAddBack + personalAddBackTotal - input.ownerSalary;
+    input.netIncomeQB +
+    input.psAddBack +
+    personalAddBackTotal +
+    input.taxOptimizationReturn +
+    input.psPayoutAddBack -
+    input.ownerSalary -
+    input.uncollectible;
 
   const rows: HolderCalculation[] = Array.from(shareholderIds).map((shareholderId) => {
     const shares = shareMap.get(shareholderId) ?? 0;

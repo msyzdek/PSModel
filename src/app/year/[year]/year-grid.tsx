@@ -96,9 +96,22 @@ export default function YearGrid({
 
     return [
       buildRow("netIncome", "Net income (QBO)", (month) => month.netIncomeQB),
+      buildRow(
+        "taxOptimizationReturn",
+        "Tax optimization return",
+        (month) => month.taxOptimizationReturn,
+      ),
       buildRow("psAddBack", "PS add-back", (month) => month.psAddBack),
+      buildRow(
+        "psPayoutAddBack",
+        "PS payouts add-back",
+        (month) => month.psPayoutAddBack,
+      ),
       buildRow("ownerSalary", "Owner salary", (month) =>
         month.ownerSalary !== null ? -month.ownerSalary : null,
+      ),
+      buildRow("uncollectible", "Uncollectible", (month) =>
+        month.uncollectible !== null ? -month.uncollectible : null,
       ),
       buildRow(
         "personalAddBack",

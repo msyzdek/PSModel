@@ -138,12 +138,18 @@ async function main() {
         netIncomeQB: new Prisma.Decimal(netIncome),
         ownerSalary: new Prisma.Decimal(ownerSalary),
         psAddBack: new Prisma.Decimal(0),
+        taxOptimizationReturn: new Prisma.Decimal(0),
+        uncollectible: new Prisma.Decimal(0),
+        psPayoutAddBack: new Prisma.Decimal(0),
       },
       create: {
         month,
         netIncomeQB: new Prisma.Decimal(netIncome),
         psAddBack: new Prisma.Decimal(0),
         ownerSalary: new Prisma.Decimal(ownerSalary),
+        taxOptimizationReturn: new Prisma.Decimal(0),
+        uncollectible: new Prisma.Decimal(0),
+        psPayoutAddBack: new Prisma.Decimal(0),
       },
     });
 

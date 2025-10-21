@@ -30,6 +30,9 @@ model Period {
   netIncomeQB  Decimal
   psAddBack    Decimal
   ownerSalary  Decimal
+  taxOptimizationReturn Decimal @default(0)
+  uncollectible         Decimal @default(0)
+  psPayoutAddBack       Decimal @default(0)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 
