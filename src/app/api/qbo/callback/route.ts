@@ -64,30 +64,13 @@ export async function GET(req: NextRequest) {
 
     const results: { month: string; netIncomeQB: string; created: boolean }[] = [];
     for (const [month, amount] of Object.entries(monthly)) {
-      const created = await prisma.period
-        .upsert({
-          where: { month },
-          update: { netIncomeQB: amount },
-          create: {
-            month,
-            netIncomeQB: amount,
-            psAddBack: "0",
-            ownerSalary: "0",
-          },
-          select: { id: true },
-        })
-        .then((_) => true)
-        .catch(() => false);
-
-      // If upsert failed due to select shape, retry without select
-      if (!created) {
-        await prisma.period.upsert({
-          where: { month },
-          update: { netIncomeQB: amount },
-          create: { month, netIncomeQB: amount, psAddBack: "0", ownerSalary: "0" },
-        });
-      }
-      results.push({ month, netIncomeQB: amount, created: !created ? false : true });
+      const existing = await prisma.period.findUnique({ where: { month }, select: { id: true } });
+      await prisma.period.upsert({
+        where: { month },
+        update: { netIncomeQB: amount },
+        create: { month, netIncomeQB: amount, psAddBack: "0", ownerSalary: "0" },
+      });
+      results.push({ month, netIncomeQB: amount, created: !existing });
     }
 
     return NextResponse.json({ ok: true, realmId, year: state.year, months: results });
