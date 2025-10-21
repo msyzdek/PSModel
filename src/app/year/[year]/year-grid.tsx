@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import type { CellClickedEvent, ColDef, ValueFormatterParams } from "ag-grid-community";
+import {
+  AllCommunityModule,
+  ModuleRegistry,
+  type CellClickedEvent,
+  type ColDef,
+  type ValueFormatterParams,
+} from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { useRouter } from "next/navigation";
 
@@ -10,6 +16,8 @@ import { formatYearMonth } from "@/lib/date";
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
+
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 type MonthField = {
   field: string;
