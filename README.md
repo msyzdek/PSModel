@@ -59,3 +59,10 @@ The app runs on [http://localhost:3000](http://localhost:3000).
 - `npm run typecheck` – TypeScript `--noEmit`
 - `npm run test` – Vitest unit tests
 - `npm run build` – Next.js production build
+
+## QBO Integration (Local)
+
+- See `docs/qbo-local-setup.md` for step‑by‑step instructions to:
+  - create a QBO Developer app and US sandbox,
+  - set required env vars (`QBO_CLIENT_ID`, `QBO_CLIENT_SECRET`, `QBO_REDIRECT_URI`, `QBO_ENV`), and
+  - run the OAuth flow at `/api/qbo/connect?year=YYYY` to fetch a Profit & Loss report (monthly, accrual) as raw JSON.
