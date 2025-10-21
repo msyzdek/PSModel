@@ -7,6 +7,7 @@ const prisma = new PrismaClient();
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const SHAREHOLDERS_CSV = path.join(__dirname, 'data', 'shareholders.csv');
+const NET_INCOME_CSV = path.join(__dirname, 'data', 'net_income_2025.csv');
 
 type CsvRow = {
   name: string;
@@ -15,7 +16,7 @@ type CsvRow = {
   ownerSalary?: number;
 };
 
-function parseCsv(): CsvRow[] {
+function parseShareholdersCsv(): CsvRow[] {
   const raw = readFileSync(SHAREHOLDERS_CSV, 'utf-8');
   const [headerLine, ...rows] = raw.trim().split(/\r?\n/);
 
@@ -39,30 +40,50 @@ function parseCsv(): CsvRow[] {
     .filter((row) => row.name && row.email && !Number.isNaN(row.shares));
 }
 
-function currentYearMonth(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
+type NetIncomeRow = {
+  month: string;
+  netIncome: number;
+};
+
+function parseNetIncomeCsv(): NetIncomeRow[] {
+  const raw = readFileSync(NET_INCOME_CSV, 'utf-8');
+  const [headerLine, ...rows] = raw.trim().split(/\r?\n/);
+  const headers = headerLine.split(',').map((h) => h.trim());
+  return rows
+    .map((line) => line.split(',').map((cell) => cell.trim()))
+    .map((cells) => {
+      const row: Record<string, string> = {};
+      headers.forEach((header, index) => {
+        row[header] = cells[index] ?? '';
+      });
+      return row;
+    })
+    .map((row) => ({
+      month: row.month,
+      netIncome: Number(row.net_income ?? 0),
+    }))
+    .filter((row) => row.month && !Number.isNaN(row.netIncome));
 }
 
 async function main() {
-  const data = parseCsv();
-  if (data.length === 0) {
+  const shareholders = parseShareholdersCsv();
+  if (shareholders.length === 0) {
     console.warn('shareholders.csv is empty; skipping seed.');
     return;
   }
 
-  const monthKey = currentYearMonth();
-  let ownerSalary = 0;
+  const netIncomeRows = parseNetIncomeCsv();
+  if (netIncomeRows.length === 0) {
+    console.warn('net_income_2025.csv is empty; skipping seed.');
+    return;
+  }
+
+  const ownerSalaryEntry = shareholders.find((entry) => entry.ownerSalary && entry.ownerSalary > 0);
+  const ownerSalary = ownerSalaryEntry?.ownerSalary ?? 0;
 
   const shareholderIdMap = new Map<string, string>();
 
-  for (const entry of data) {
-    if (entry.ownerSalary) {
-      ownerSalary = entry.ownerSalary;
-    }
-
+  for (const entry of shareholders) {
     const record = await prisma.shareholder.upsert({
       where: { email: entry.email },
       update: {
@@ -80,36 +101,40 @@ async function main() {
     shareholderIdMap.set(entry.name, record.id);
   }
 
-  const period = await prisma.period.upsert({
-    where: { month: monthKey },
-    update: {
-      ownerSalary: new Prisma.Decimal(ownerSalary),
-    },
-    create: {
-      month: monthKey,
-      netIncomeQB: new Prisma.Decimal(0),
-      psAddBack: new Prisma.Decimal(0),
-      ownerSalary: new Prisma.Decimal(ownerSalary),
-    },
-  });
+  for (const { month, netIncome } of netIncomeRows) {
+    const period = await prisma.period.upsert({
+      where: { month },
+      update: {
+        netIncomeQB: new Prisma.Decimal(netIncome),
+        ownerSalary: new Prisma.Decimal(ownerSalary),
+        psAddBack: new Prisma.Decimal(0),
+      },
+      create: {
+        month,
+        netIncomeQB: new Prisma.Decimal(netIncome),
+        psAddBack: new Prisma.Decimal(0),
+        ownerSalary: new Prisma.Decimal(ownerSalary),
+      },
+    });
 
-  await prisma.shareAllocation.deleteMany({ where: { periodId: period.id } });
+    await prisma.shareAllocation.deleteMany({ where: { periodId: period.id } });
 
-  const allocationData = data
-    .filter((entry) => entry.shares > 0)
-    .map((entry) => ({
-      periodId: period.id,
-      shareholderId: shareholderIdMap.get(entry.name)!,
-      shares: new Prisma.Decimal(entry.shares),
-    }));
+    const allocationData = shareholders
+      .filter((entry) => entry.shares > 0)
+      .map((entry) => ({
+        periodId: period.id,
+        shareholderId: shareholderIdMap.get(entry.name)!,
+        shares: new Prisma.Decimal(entry.shares),
+      }));
 
-  if (allocationData.length > 0) {
-    await prisma.shareAllocation.createMany({ data: allocationData });
+    if (allocationData.length > 0) {
+      await prisma.shareAllocation.createMany({ data: allocationData });
+    }
   }
 
   console.info(
-    `Seeded ${data.length} shareholders with allocations for ${monthKey}.` +
-      (ownerSalary ? ` Owner salary set to ${ownerSalary.toLocaleString()} USD.` : ''),
+    `Seeded ${shareholders.length} shareholders and ${netIncomeRows.length} periods.` +
+      (ownerSalary ? ` Owner salary set to ${ownerSalary.toLocaleString()} USD per month.` : ''),
   );
 }
 
