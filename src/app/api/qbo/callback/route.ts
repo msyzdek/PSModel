@@ -62,13 +62,6 @@ export async function GET(req: NextRequest) {
     // Parse Net Income by month and upsert into Period
     const monthly = parseMonthlyNetIncome(report, state.year);
 
-    // Determine if this is the first import for the target year
-    const yearPrefix = `${state.year}-`;
-    const existingCountForYear = await prisma.period.count({
-      where: { month: { startsWith: yearPrefix } },
-    });
-    const isFirstYearImport = existingCountForYear === 0;
-
     // Base owner salary: December of previous year, else default 30000 (per month)
     const prevDecMonth = `${state.year - 1}-12`;
     const prevDec = await prisma.period.findUnique({
@@ -89,7 +82,7 @@ export async function GET(req: NextRequest) {
           month,
           netIncomeQB: amount,
           psAddBack: "0",
-          ownerSalary: isFirstYearImport ? baseOwnerSalary : "0",
+          ownerSalary: baseOwnerSalary,
         },
       });
       results.push({ month, netIncomeQB: amount, created: !existing });

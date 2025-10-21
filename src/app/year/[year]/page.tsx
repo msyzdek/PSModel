@@ -193,12 +193,12 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
             </p>
           </div>
           <div className="flex flex-col items-stretch gap-3 sm:flex-row">
-            <Link
+            <a
               href={`/api/qbo/connect?year=${parsedYear}`}
               className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-[var(--brand-primary)] shadow-lg transition hover:bg-white/90"
             >
               Import From QuickBooks
-            </Link>
+            </a>
             <Link
               href={`/month/${formatYearMonth(parsedYear, Math.min(new Date().getMonth() + 1, 12))}`}
               className="inline-flex items-center justify-center rounded-full bg-[var(--brand-accent)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
