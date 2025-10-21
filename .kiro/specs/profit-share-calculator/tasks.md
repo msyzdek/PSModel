@@ -72,8 +72,8 @@
     - Implement delete_by_period method
     - _Requirements: 7.3, 7.4_
 
-- [ ] 5. Implement service layer
-  - [ ] 5.1 Create PeriodService
+- [x] 5. Implement service layer
+  - [x] 5.1 Create PeriodService
     - Implement create_period method that orchestrates calculation and persistence
     - Implement get_period method with allocations
     - Implement update_period method that recalculates
@@ -81,7 +81,7 @@
     - Implement get_prior_period method for carry-forward lookup
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 7.1, 7.2, 10.1, 10.2, 10.3, 10.4, 10.5_
 
-  - [ ] 5.2 Integrate calculation service with period service
+  - [x] 5.2 Integrate calculation service with period service
     - Call calculation service from create_period
     - Call calculation service from update_period
     - Handle carry-forward loading from prior period
