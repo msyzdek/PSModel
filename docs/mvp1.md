@@ -6,10 +6,11 @@ This MVP implements monthly profit share with a simplified scope to ship quickly
 - PS payouts expensed in QBO: added back via a single manual field per month (`ps_addback`).
 - Personal charges: monthly per-holder amounts. The total is added back to the pool and deducted from the respective holder only.
 - Owner salary: a single monthly number per month (`owner_salary`), subtracted from the pool for everyone (no schedules in MVP).
-- Shares: fixed per month per holder (no intra-month changes).
+- Shares: fixed per month per holder (no intra-month changes). Default monthly values copy from the prior month (or 0 if none).
 - Negative payouts: zero floor; deficits carry forward to offset future months (no invoicing). Carry-forward is derived from the prior month, not user-entered.
 - Rounding: round half up to cents; reconcile rounding delta to the largest positive payout.
 - No period finalization/locking in MVP; periods remain editable.
+- All monetary values displayed in USD. Year view defaults to the current calendar year.
 
 ## Calculation
 
@@ -51,6 +52,7 @@ Validation:
 - `total_shares > 0` when distributing a positive `adjusted_pool`.
 - No intra-month share changes (single monthly value per holder).
 - Inputs are month-keyed; no per-transaction date checks or effective-dated schedules in MVP.
+- When a new month is created, shares seed from the previous month and personal charges default to 0.
 
 ## Access & Auth (MVP)
 
