@@ -40,6 +40,7 @@ async def login(login_request: LoginRequest, response: Response) -> TokenRespons
     )
 
     # Set httpOnly cookie
+    # Note: domain is not set to allow cookie to work across localhost ports
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -47,6 +48,7 @@ async def login(login_request: LoginRequest, response: Response) -> TokenRespons
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         samesite="lax",
         secure=False,  # Set to True in production with HTTPS
+        path="/",
     )
 
     logger.info(f"Successful login for username: {login_request.username}")

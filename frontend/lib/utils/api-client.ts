@@ -2,7 +2,8 @@
  * API Client utilities for making HTTP requests to the backend
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Use proxy route to avoid CORS and cookie issues
+const API_BASE_URL = '/api/proxy';
 
 /**
  * Custom error class for API errors
