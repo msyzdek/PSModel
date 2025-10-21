@@ -136,22 +136,22 @@
     - Create useUpdatePeriod mutation hook
     - _Requirements: 7.3, 10.2_
 
-- [ ] 8. Implement frontend UI components
-  - [ ] 8.1 Create PeriodForm component
+- [x] 8. Implement frontend UI components
+  - [x] 8.1 Create PeriodForm component
     - Build form with React Hook Form
     - Add Zod validation schema
     - Create input fields for all period-level data
     - Add error display for validation failures
     - _Requirements: 2.1, 2.2, 2.3, 9.1, 9.2, 9.3_
 
-  - [ ] 8.2 Create HolderAllocationForm component
+  - [x] 8.2 Create HolderAllocationForm component
     - Build dynamic form for multiple holders
     - Add/remove holder row functionality
     - Input fields for holder_name, shares, personal_charges
     - Per-holder validation
     - _Requirements: 2.4, 2.5, 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ] 8.3 Create CalculationSummary component
+  - [x] 8.3 Create CalculationSummary component
     - Display pool build-up breakdown
     - Display adjusted pool and total shares
     - Create allocations table with all holder details
@@ -159,14 +159,14 @@
     - Display rounding delta and adjustment details
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-  - [ ] 8.4 Create PeriodNavigator component
+  - [x] 8.4 Create PeriodNavigator component
     - Month/year selector dropdown
     - Previous/next month navigation buttons
     - Create new period button
     - Display current period clearly
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
 
-  - [ ] 8.5 Create shared UI components
+  - [x] 8.5 Create shared UI components
     - Create CurrencyInput component with formatting
     - Create NumberInput component with validation
     - Create Button component with loading states
