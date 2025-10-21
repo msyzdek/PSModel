@@ -91,8 +91,15 @@ export async function GET(req: NextRequest) {
       : "30000";
 
     const results: { month: string; netIncomeQB: string; created: boolean }[] = [];
+    // Fetch all existing periods for the months in a single query
+    const months = Object.keys(monthly);
+    const existingPeriods = await prisma.period.findMany({
+      where: { month: { in: months } },
+      select: { month: true, id: true },
+    });
+    const existingMap = new Map(existingPeriods.map(p => [p.month, p]));
     for (const [month, amount] of Object.entries(monthly)) {
-      const existing = await prisma.period.findUnique({ where: { month }, select: { id: true } });
+      const existing = existingMap.get(month);
       await prisma.period.upsert({
         where: { month },
         update: { netIncomeQB: amount },
