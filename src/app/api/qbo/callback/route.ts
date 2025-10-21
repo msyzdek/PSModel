@@ -95,9 +95,13 @@ export async function GET(req: NextRequest) {
       results.push({ month, netIncomeQB: amount, created: !existing });
     }
 
-    // Redirect back to the year page with a success indicator for a banner
+    // Redirect back to the year page with a success indicator and counts for banner
+    const createdCount = results.filter((r) => r.created).length;
+    const updatedCount = results.length - createdCount;
     const redirectTo = new URL(`${req.nextUrl.origin}/year/${state.year}`);
     redirectTo.searchParams.set("importedYear", String(state.year));
+    redirectTo.searchParams.set("created", String(createdCount));
+    redirectTo.searchParams.set("updated", String(updatedCount));
     return NextResponse.redirect(redirectTo);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

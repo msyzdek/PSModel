@@ -165,6 +165,8 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
 
   const savedMonthParam = typeof resolvedSearchParams.savedMonth === "string" ? resolvedSearchParams.savedMonth : undefined;
   const importedYearParam = typeof resolvedSearchParams.importedYear === "string" ? resolvedSearchParams.importedYear : undefined;
+  const createdParam = typeof resolvedSearchParams.created === "string" ? Number(resolvedSearchParams.created) : undefined;
+  const updatedParam = typeof resolvedSearchParams.updated === "string" ? Number(resolvedSearchParams.updated) : undefined;
   let savedMonthLabel: string | null = null;
   if (savedMonthParam) {
     try {
@@ -210,7 +212,11 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
         <SavedMonthBanner savedMonth={savedMonthParam ?? null} label={savedMonthLabel} />
       ) : null}
       {importedYearParam ? (
-        <ImportedYearBanner importedYear={importedYearParam ?? null} />
+        <ImportedYearBanner
+          importedYear={importedYearParam ?? null}
+          created={Number.isFinite(createdParam as number) ? (createdParam as number) : null}
+          updated={Number.isFinite(updatedParam as number) ? (updatedParam as number) : null}
+        />
       ) : null}
       <YearGrid
         year={parsedYear}
