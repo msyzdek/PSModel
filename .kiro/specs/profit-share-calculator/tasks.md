@@ -29,35 +29,35 @@
     - Add database initialization script
     - _Requirements: 7.1_
 
-- [ ] 3. Implement calculation service core logic
-  - [ ] 3.1 Create ProfitShareCalculationService class
+- [x] 3. Implement calculation service core logic
+  - [x] 3.1 Create ProfitShareCalculationService class
     - Implement calculate_adjusted_pool method
     - Implement calculate_personal_addback_total method
     - Implement calculate_gross_allocations method
     - Implement apply_personal_charges method
     - _Requirements: 1.1, 1.2, 1.3_
 
-  - [ ] 3.2 Implement carry-forward logic
+  - [x] 3.2 Implement carry-forward logic
     - Create method to load carry-forwards from prior period
     - Implement logic to apply carry-forward_in to current calculations
     - Implement zero floor logic that generates carry-forward_out
     - _Requirements: 1.4, 1.5, 3.1, 3.2, 3.3, 3.4, 3.5_
 
-  - [ ] 3.3 Implement rounding and reconciliation
+  - [x] 3.3 Implement rounding and reconciliation
     - Create round-half-up rounding function
     - Implement logic to find holder with largest positive payout
     - Calculate rounding delta and apply adjustment
     - Validate that rounded total equals rounded pool
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [ ] 3.4 Implement special adjustments handling
+  - [x] 3.4 Implement special adjustments handling
     - Add uncollectible income to adjusted pool calculation
     - Add bad debt to adjusted pool calculation
     - Add tax optimization to adjusted pool calculation
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6_
 
-- [ ] 4. Implement repository layer
-  - [ ] 4.1 Create PeriodRepository
+- [x] 4. Implement repository layer
+  - [x] 4.1 Create PeriodRepository
     - Implement save method
     - Implement find_by_id method
     - Implement find_by_year_month method
@@ -65,7 +65,7 @@
     - Implement delete method
     - _Requirements: 7.3, 7.4_
 
-  - [ ] 4.2 Create HolderAllocationRepository
+  - [x] 4.2 Create HolderAllocationRepository
     - Implement save_all method for batch insert
     - Implement find_by_period method
     - Implement find_carry_forwards method
