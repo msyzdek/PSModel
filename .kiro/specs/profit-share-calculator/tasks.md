@@ -88,8 +88,8 @@
     - Validate calculation results before saving
     - _Requirements: 1.6, 3.4, 7.2_
 
-- [ ] 6. Implement FastAPI endpoints
-  - [ ] 6.1 Create period CRUD endpoints
+- [x] 6. Implement FastAPI endpoints
+  - [x] 6.1 Create period CRUD endpoints
     - POST /api/periods - create new period with calculations
     - GET /api/periods - list all periods
     - GET /api/periods/{year}/{month} - get specific period
@@ -97,12 +97,12 @@
     - DELETE /api/periods/{year}/{month} - delete period
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 7.3, 10.2_
 
-  - [ ] 6.2 Create calculation endpoints
+  - [x] 6.2 Create calculation endpoints
     - POST /api/calculate/preview - preview calculation without saving
     - GET /api/periods/{year}/{month}/summary - get period summary report
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-  - [ ] 6.3 Add error handling middleware
+  - [x] 6.3 Add error handling middleware
     - Handle validation errors (400)
     - Handle not found errors (404)
     - Handle calculation errors (422)
@@ -110,7 +110,7 @@
     - Add request logging
     - _Requirements: 2.6, 2.7_
 
-  - [ ] 6.4 Configure CORS for frontend
+  - [x] 6.4 Configure CORS for frontend
     - Set allowed origins from environment variable
     - Configure allowed methods and headers
     - _Requirements: 8.1, 8.2, 8.3_
