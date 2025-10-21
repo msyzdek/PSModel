@@ -22,10 +22,10 @@ beforeEach(async () => {
 describe("/api/qbo/connect", () => {
   it("redirects to Intuit with state that encodes the year", async () => {
     const req = new NextRequest("http://localhost:3000/api/qbo/connect?year=2025");
-    const res = await ConnectRoute.GET(req as any);
+    const res = await ConnectRoute.GET(req);
     expect(res.status).toBeGreaterThanOrEqual(300);
     expect(res.status).toBeLessThan(400);
-    const loc = redirectedTo(res as unknown as Response);
+    const loc = redirectedTo(res);
     expect(loc).toBeTruthy();
     expect(loc).toMatch(/appcenter\.intuit\.com/);
     const url = new URL(loc!);
@@ -38,15 +38,15 @@ describe("/api/qbo/connect", () => {
 
   it("returns 400 for missing year", async () => {
     const req = new NextRequest("http://localhost:3000/api/qbo/connect");
-    const res = await ConnectRoute.GET(req as any);
+    const res = await ConnectRoute.GET(req);
     expect(res.status).toBe(400);
   });
 });
 
 describe("/api/qbo/callback", () => {
   // Partial mock QBO lib to avoid network
-  vi.mock("@/lib/qbo", async (importActual) => {
-    const actual = await importActual<typeof import("@/lib/qbo")>("@/lib/qbo");
+  vi.mock("@/lib/qbo", async () => {
+    const actual = await vi.importActual<typeof import("@/lib/qbo")>("@/lib/qbo");
     return {
       ...actual,
       exchangeCodeForTokens: vi.fn().mockResolvedValue({
@@ -71,7 +71,7 @@ describe("/api/qbo/callback", () => {
     const state = encodeState({ nonce: "nonce-1", year: 2025 });
     const url = `http://localhost:3000/api/qbo/callback?code=abc&realmId=${process.env.QBO_ALLOWED_REALMID}&state=${state}`;
     const req = new NextRequest(url); // no cookie
-    const res = await CallbackRoute.GET(req as any);
+    const res = await CallbackRoute.GET(req);
     expect(res.status).toBe(400);
   });
 
@@ -80,8 +80,9 @@ describe("/api/qbo/callback", () => {
     delete process.env.QBO_ALLOWED_REALMID;
     const state = encodeState({ nonce: "nonce-2", year: 2025 });
     const url = `http://localhost:3000/api/qbo/callback?code=abc&realmId=123&state=${state}`;
-    const req = new NextRequest(url, { headers: { cookie: "qbo_oauth_nonce=nonce-2" } as any });
-    const res = await CallbackRoute.GET(req as any);
+    const baseReq = new Request(url, { headers: new Headers({ cookie: "qbo_oauth_nonce=nonce-2" }) });
+    const req = new NextRequest(baseReq);
+    const res = await CallbackRoute.GET(req);
     expect(res.status).toBe(403);
     process.env.QBO_ALLOWED_REALMID = saved;
   });
@@ -89,10 +90,13 @@ describe("/api/qbo/callback", () => {
   it("imports 12 months on first run and redirects with counts", async () => {
     const state = encodeState({ nonce: "nonce-3", year: 2025 });
     const url = `http://localhost:3000/api/qbo/callback?code=abc&realmId=${process.env.QBO_ALLOWED_REALMID}&state=${state}`;
-    const req = new NextRequest(url, { headers: { cookie: "qbo_oauth_nonce=nonce-3" } as any });
-    const res = await CallbackRoute.GET(req as any);
+    const baseReq = new Request(url, { headers: new Headers({ cookie: "qbo_oauth_nonce=nonce-3" }) });
+    const req = new NextRequest(baseReq);
+    const res = await CallbackRoute.GET(req);
     expect(res.status).toBeGreaterThanOrEqual(300);
-    const loc = new URL((res as any).headers.get("location"));
+    const locHeader = res.headers.get("location");
+    expect(locHeader).toBeTruthy();
+    const loc = new URL(locHeader!);
     expect(loc.pathname).toBe("/year/2025");
     expect(loc.searchParams.get("created")).toBe("12");
     expect(loc.searchParams.get("updated")).toBe("0");
@@ -112,8 +116,9 @@ describe("/api/qbo/callback", () => {
     });
     const state = encodeState({ nonce: "nonce-4", year: 2025 });
     const url = `http://localhost:3000/api/qbo/callback?code=abc&realmId=${process.env.QBO_ALLOWED_REALMID}&state=${state}`;
-    const req = new NextRequest(url, { headers: { cookie: "qbo_oauth_nonce=nonce-4" } as any });
-    const res = await CallbackRoute.GET(req as any);
+    const baseReq = new Request(url, { headers: new Headers({ cookie: "qbo_oauth_nonce=nonce-4" }) });
+    const req = new NextRequest(baseReq);
+    const res = await CallbackRoute.GET(req);
     expect(res.status).toBeGreaterThanOrEqual(300);
     const jan = await prisma.period.findUnique({ where: { month: "2025-01" } });
     expect(jan?.ownerSalary.toString()).toBe("8500");
@@ -124,8 +129,8 @@ describe("/api/qbo/callback", () => {
 
     const state2 = encodeState({ nonce: "nonce-5", year: 2025 });
     const url2 = `http://localhost:3000/api/qbo/callback?code=abc&realmId=${process.env.QBO_ALLOWED_REALMID}&state=${state2}`;
-    const req2 = new NextRequest(url2, { headers: { cookie: "qbo_oauth_nonce=nonce-5" } as any });
-    const res2 = await CallbackRoute.GET(req2 as any);
+    const req2 = new NextRequest(new Request(url2, { headers: new Headers({ cookie: "qbo_oauth_nonce=nonce-5" }) }));
+    const res2 = await CallbackRoute.GET(req2);
     expect(res2.status).toBeGreaterThanOrEqual(300);
     const jan2 = await prisma.period.findUnique({ where: { month: "2025-01" } });
     expect(jan2?.ownerSalary.toString()).toBe("30000");
@@ -152,8 +157,8 @@ describe("/api/qbo/callback", () => {
     });
     const state = encodeState({ nonce: "nonce-6", year: 2025 });
     const url = `http://localhost:3000/api/qbo/callback?code=abc&realmId=${process.env.QBO_ALLOWED_REALMID}&state=${state}`;
-    const req = new NextRequest(url, { headers: { cookie: "qbo_oauth_nonce=nonce-6" } as any });
-    const res = await CallbackRoute.GET(req as any);
+    const req = new NextRequest(new Request(url, { headers: new Headers({ cookie: "qbo_oauth_nonce=nonce-6" }) }));
+    const res = await CallbackRoute.GET(req);
     expect(res.status).toBeGreaterThanOrEqual(300);
     const all = await prisma.period.findMany({ where: { month: { startsWith: "2025-" } }, orderBy: { month: "asc" } });
     expect(all).toHaveLength(12);
@@ -163,4 +168,3 @@ describe("/api/qbo/callback", () => {
     expect(feb.ownerSalary.toString()).toBe("7777"); // base applied to gap
   });
 });
-
