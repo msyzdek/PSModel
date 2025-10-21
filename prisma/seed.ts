@@ -8,6 +8,7 @@ const prisma = new PrismaClient();
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const SHAREHOLDERS_CSV = path.join(__dirname, 'data', 'shareholders.csv');
 const NET_INCOME_CSV = path.join(__dirname, 'data', 'net_income_2025.csv');
+const PERSONAL_EXPENSES_CSV = path.join(__dirname, 'data', 'personal_expenses_2025.csv');
 
 type CsvRow = {
   name: string;
@@ -65,6 +66,33 @@ function parseNetIncomeCsv(): NetIncomeRow[] {
     .filter((row) => row.month && !Number.isNaN(row.netIncome));
 }
 
+type PersonalExpenseRow = {
+  month: string;
+  shareholderEmail: string;
+  amount: number;
+};
+
+function parsePersonalExpensesCsv(): PersonalExpenseRow[] {
+  const raw = readFileSync(PERSONAL_EXPENSES_CSV, 'utf-8');
+  const [headerLine, ...rows] = raw.trim().split(/\r?\n/);
+  const headers = headerLine.split(',').map((h) => h.trim());
+  return rows
+    .map((line) => line.split(',').map((cell) => cell.trim()))
+    .map((cells) => {
+      const row: Record<string, string> = {};
+      headers.forEach((header, index) => {
+        row[header] = cells[index] ?? '';
+      });
+      return row;
+    })
+    .map((row) => ({
+      month: row.month,
+      shareholderEmail: row.shareholder_email,
+      amount: Number(row.amount ?? 0),
+    }))
+    .filter((row) => row.month && row.shareholderEmail && !Number.isNaN(row.amount));
+}
+
 async function main() {
   const shareholders = parseShareholdersCsv();
   if (shareholders.length === 0) {
@@ -77,6 +105,8 @@ async function main() {
     console.warn('net_income_2025.csv is empty; skipping seed.');
     return;
   }
+
+  const personalExpenseRows = parsePersonalExpensesCsv();
 
   const ownerSalaryEntry = shareholders.find((entry) => entry.ownerSalary && entry.ownerSalary > 0);
   const ownerSalary = ownerSalaryEntry?.ownerSalary ?? 0;
@@ -118,6 +148,7 @@ async function main() {
     });
 
     await prisma.shareAllocation.deleteMany({ where: { periodId: period.id } });
+    await prisma.personalCharge.deleteMany({ where: { periodId: period.id } });
 
     const allocationData = shareholders
       .filter((entry) => entry.shares > 0)
@@ -129,6 +160,28 @@ async function main() {
 
     if (allocationData.length > 0) {
       await prisma.shareAllocation.createMany({ data: allocationData });
+    }
+
+    const expensesForMonth = personalExpenseRows.filter((row) => row.month === month);
+    if (expensesForMonth.length > 0) {
+      const expenseRecords = expensesForMonth
+        .map((row) => {
+          const shareholder = shareholders.find((entry) => entry.email === row.shareholderEmail);
+          if (!shareholder) {
+            return null;
+          }
+          return {
+            periodId: period.id,
+            shareholderId: shareholderIdMap.get(shareholder.name)!,
+            amount: new Prisma.Decimal(row.amount),
+            memo: 'Seeded personal expense',
+          };
+        })
+        .filter((item): item is { periodId: string; shareholderId: string; amount: Prisma.Decimal; memo: string } => Boolean(item));
+
+      if (expenseRecords.length > 0) {
+        await prisma.personalCharge.createMany({ data: expenseRecords });
+      }
     }
   }
 
