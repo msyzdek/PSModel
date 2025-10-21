@@ -163,3 +163,90 @@ export function decodeState(s: string): OauthState {
 }
 
 // Route handlers should set/read cookies on the Response/Request directly.
+
+// --- Report parsing helpers ---
+type ColData = { value?: string | null };
+type ReportRow = {
+  type?: string;
+  Header?: { ColData?: ColData[] };
+  Rows?: { Row?: ReportRow[] };
+  ColData?: ColData[];
+  Summary?: { ColData?: ColData[] };
+};
+
+export function parseMonthlyNetIncome(report: any, year: number): Record<string, string> {
+  const rows: ReportRow[] = report?.Rows?.Row ?? [];
+
+  function collectAllRows(r: ReportRow[]): ReportRow[] {
+    const out: ReportRow[] = [];
+    for (const row of r ?? []) {
+      out.push(row);
+      if (row.Rows?.Row?.length) out.push(...collectAllRows(row.Rows.Row));
+    }
+    return out;
+  }
+
+  const flat = collectAllRows(rows);
+
+  const isNetIncomeText = (s: string | undefined) =>
+    typeof s === "string" && /\bnet\s+income\b/i.test(s);
+
+  function rowTextCandidates(row: ReportRow): string[] {
+    const texts: string[] = [];
+    const add = (arr?: ColData[]) => {
+      for (const c of arr ?? []) if (c?.value) texts.push(String(c.value));
+    };
+    add(row.Header?.ColData);
+    add(row.ColData);
+    add(row.Summary?.ColData);
+    return texts;
+  }
+
+  const netIncomeRow = flat.find((row) => rowTextCandidates(row).some(isNetIncomeText));
+
+  const targetRow = netIncomeRow ?? flat.filter((r) => r.Summary?.ColData?.length).slice(-1)[0];
+  if (!targetRow) throw new Error("Could not locate Net Income row in report");
+
+  const cells: ColData[] = targetRow.Summary?.ColData ?? targetRow.ColData ?? [];
+  if (!cells.length) throw new Error("Net Income row has no data cells");
+
+  const numeric = cells
+    .map((c) => (c?.value ?? "").trim())
+    .map((v) => ({ raw: v, num: moneyStringToNumberOrNull(v) }))
+    .filter((x) => x.num !== null) as { raw: string; num: number }[];
+
+  // We expect 12 monthly numbers; there may also be a Total. Take the last 12 numbers.
+  const lastTwelve = numeric.slice(-12);
+  if (lastTwelve.length !== 12) {
+    throw new Error(`Expected 12 monthly values, found ${lastTwelve.length}`);
+  }
+
+  const result: Record<string, string> = {};
+  for (let m = 1; m <= 12; m++) {
+    const ym = `${year}-${String(m).padStart(2, "0")}`;
+    const v = lastTwelve[m - 1];
+    result[ym] = normalizeMoneyString(v.raw);
+  }
+  return result;
+}
+
+function moneyStringToNumberOrNull(v: string): number | null {
+  if (!v) return null;
+  const trimmed = v.trim();
+  if (trimmed === "—" || trimmed === "–" || trimmed === "-") return 0;
+  // Handle (123.45) format
+  const neg = /^\(.*\)$/.test(trimmed);
+  const cleaned = trimmed.replace(/[(),]/g, "");
+  const num = Number(cleaned);
+  if (Number.isFinite(num)) return neg ? -Math.abs(num) : num;
+  return null;
+}
+
+function normalizeMoneyString(v: string): string {
+  if (!v) return "0";
+  const trimmed = v.trim();
+  if (trimmed === "—" || trimmed === "–" || trimmed === "-") return "0";
+  const neg = /^\(.*\)$/.test(trimmed);
+  const cleaned = trimmed.replace(/[(),]/g, "");
+  return neg ? `-${cleaned}` : cleaned;
+}
