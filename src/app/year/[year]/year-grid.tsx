@@ -99,7 +99,7 @@ export default function YearGrid({
       buildRow(
         "taxOptimizationReturn",
         "Tax optimization return",
-        (month) => month.taxOptimizationReturn,
+        (month) => (month.taxOptimizationReturn !== null ? -month.taxOptimizationReturn : null),
       ),
       buildRow("psAddBack", "PS add-back", (month) => month.psAddBack),
       buildRow(
@@ -110,8 +110,10 @@ export default function YearGrid({
       buildRow("ownerSalary", "Owner salary", (month) =>
         month.ownerSalary !== null ? -month.ownerSalary : null,
       ),
-      buildRow("uncollectible", "Uncollectible", (month) =>
-        month.uncollectible !== null ? -month.uncollectible : null,
+      buildRow(
+        "uncollectible",
+        "Uncollectible",
+        (month) => (month.uncollectible !== null ? -month.uncollectible : null),
       ),
       buildRow(
         "personalAddBack",

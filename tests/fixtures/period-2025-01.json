@@ -7,8 +7,8 @@
     "netIncomeQB": 365751.69,
     "psAddBack": 0,
     "ownerSalary": 30000,
-    "taxOptimizationReturn": 0,
-    "uncollectible": 0,
+    "taxOptimizationReturn": 200000,
+    "uncollectible": 283.96,
     "psPayoutAddBack": 0,
     "shares": [
       {
@@ -70,6 +70,10 @@
       {
         "shareholderId": "alicja.brajner@montrosesoftware.com",
         "shares": 2
+      },
+      {
+        "shareholderId": "maciej.zarych@montrosesoftware.com",
+        "shares": 0
       }
     ],
     "personalCharges": [
@@ -81,27 +85,28 @@
     "carryForwardIn": {}
   },
   "expected": {
-    "adjustedPool": 338262.9,
+    "adjustedPool": 137978.94,
     "personalAddBackTotal": 2511.21,
     "totalShares": 539,
-    "actualRoundedTotal": 335751.6900000001,
-    "roundingDelta": 0.02,
+    "actualRoundedTotal": 135467.73,
+    "roundingDelta": 0.01,
     "payouts": {
-      "colin.strasser@montrosesoftware.com": 75935.66,
-      "michal.fronczyk@montrosesoftware.com": 78446.87,
-      "miroslaw.syzdek@montrosesoftware.com": 78446.87,
-      "marek.krzynowek@montrosesoftware.com": 78446.89,
-      "filip.korski@montrosesoftware.com": 4393.02,
-      "maria.gacek@montrosesoftware.com": 1882.72,
-      "piotr.pilip@montrosesoftware.com": 3137.87,
-      "olha.hnatiuk@montrosesoftware.com": 4393.02,
-      "krzysztof.biedron@montrosesoftware.com": 3137.87,
-      "dominika.szczygiel@montrosesoftware.com": 1255.15,
-      "karol.kucharczyk@montrosesoftware.com": 1255.15,
-      "adrian.szyndler@montrosesoftware.com": 1255.15,
-      "michal.grudzinski@montrosesoftware.com": 1255.15,
-      "dawid.tan@montrosesoftware.com": 1255.15,
-      "alicja.brajner@montrosesoftware.com": 1255.15
+      "colin.strasser@montrosesoftware.com": 29487.62,
+      "michal.fronczyk@montrosesoftware.com": 31998.83,
+      "miroslaw.syzdek@montrosesoftware.com": 31998.83,
+      "marek.krzynowek@montrosesoftware.com": 31998.84,
+      "filip.korski@montrosesoftware.com": 1791.93,
+      "maria.gacek@montrosesoftware.com": 767.97,
+      "piotr.pilip@montrosesoftware.com": 1279.95,
+      "olha.hnatiuk@montrosesoftware.com": 1791.93,
+      "krzysztof.biedron@montrosesoftware.com": 1279.95,
+      "dominika.szczygiel@montrosesoftware.com": 511.98,
+      "karol.kucharczyk@montrosesoftware.com": 511.98,
+      "adrian.szyndler@montrosesoftware.com": 511.98,
+      "michal.grudzinski@montrosesoftware.com": 511.98,
+      "dawid.tan@montrosesoftware.com": 511.98,
+      "alicja.brajner@montrosesoftware.com": 511.98,
+      "maciej.zarych@montrosesoftware.com": 0
     }
   }
 }

@@ -687,7 +687,7 @@ export default async function MonthPage({ params }: MonthPageProps) {
             PS add-back: {currencyFormatter.format(context.periodValues.psAddBack)}
           </span>
           <span>
-            Tax optimization return: {currencyFormatter.format(context.periodValues.taxOptimizationReturn)}
+            Tax optimization return: {currencyFormatter.format(-context.periodValues.taxOptimizationReturn)}
           </span>
           <span>
             PS payouts add-back: {currencyFormatter.format(context.periodValues.psPayoutAddBack)}

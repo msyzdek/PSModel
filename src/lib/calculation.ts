@@ -100,10 +100,10 @@ export function calculatePeriod(
     input.netIncomeQB +
     input.psAddBack +
     personalAddBackTotal +
-    input.taxOptimizationReturn +
     input.psPayoutAddBack -
     input.ownerSalary -
-    input.uncollectible;
+    input.uncollectible -
+    input.taxOptimizationReturn;
 
   const rows: HolderCalculation[] = Array.from(shareholderIds).map((shareholderId) => {
     const shares = shareMap.get(shareholderId) ?? 0;
