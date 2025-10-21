@@ -490,53 +490,53 @@ export default async function MonthPage({ params }: MonthPageProps) {
 
         <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <div className="mb-4">
-            <h2 className="text-lg font-semibold">Shares</h2>
+            <h2 className="text-lg font-semibold">Shareholders</h2>
             <p className="text-sm text-slate-600">
-              Monthly shares per shareholder. When a new month is created we copy shares from the previous month.
+              Review monthly shares and personal expenses for each shareholder.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {context.shareInputs.map((entry) => {
-              const holder = context.shareholders.find((h) => h.id === entry.shareholderId);
-              return (
-                <label key={entry.shareholderId} className="flex flex-col gap-1 text-sm">
-                  <span className="font-medium">{holder?.name ?? entry.shareholderId}</span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    name={`share_${entry.shareholderId}`}
-                    defaultValue={entry.shares}
-                    className="rounded-md border border-slate-300 px-3 py-2"
-                  />
-                </label>
-              );
-            })}
-          </div>
-        </section>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 text-left text-slate-600">
+                  <th className="px-3 py-2 font-medium">Shareholder</th>
+                  <th className="px-3 py-2 font-medium">Shares</th>
+                  <th className="px-3 py-2 font-medium">Personal expenses</th>
+                </tr>
+              </thead>
+              <tbody>
+                {context.shareholders.map((holder) => {
+                  const shareValue = context.shareInputs.find((s) => s.shareholderId === holder.id)?.shares ?? 0;
+                  const personalValue = context.personalChargeInputs.find(
+                    (p) => p.shareholderId === holder.id,
+                  )?.amount ?? 0;
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold">Personal charges</h2>
-            <p className="text-sm text-slate-600">
-              Personal expenses per holder. Amounts are added back to the pool and deducted from the holder’s payout.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {context.personalChargeInputs.map((entry) => {
-              const holder = context.shareholders.find((h) => h.id === entry.shareholderId);
-              return (
-                <label key={entry.shareholderId} className="flex flex-col gap-1 text-sm">
-                  <span className="font-medium">{holder?.name ?? entry.shareholderId}</span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    name={`charge_${entry.shareholderId}`}
-                    defaultValue={entry.amount}
-                    className="rounded-md border border-slate-300 px-3 py-2"
-                  />
-                </label>
-              );
-            })}
+                  return (
+                    <tr key={holder.id} className="border-b border-slate-100">
+                      <td className="px-3 py-2 font-medium text-slate-700">{holder.name}</td>
+                      <td className="px-3 py-2">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          name={`share_${holder.id}`}
+                          defaultValue={shareValue}
+                          className="w-full rounded-md border border-slate-300 px-3 py-2"
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          name={`charge_${holder.id}`}
+                          defaultValue={personalValue}
+                          className="w-full rounded-md border border-slate-300 px-3 py-2"
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </section>
 
