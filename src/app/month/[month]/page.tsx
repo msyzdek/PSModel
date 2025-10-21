@@ -318,7 +318,7 @@ async function revalidateForMonth(monthKey: string) {
   revalidatePath(`/year/${year}`);
 }
 
-async function handlePeriodForm(formData: FormData) {
+async function handleSaveAll(formData: FormData) {
   "use server";
 
   const month = (formData.get("month") as string) ?? "";
@@ -326,23 +326,31 @@ async function handlePeriodForm(formData: FormData) {
     redirect("/");
   }
 
-  const netIncomeQB = parseNumberField(formData.get("net_income_qb"), {
-    allowNegative: true,
-  });
-  const psAddBack = parseNumberField(formData.get("ps_addback"), {
-    allowNegative: true,
-  });
-  const ownerSalary = parseNumberField(formData.get("owner_salary"), {
-    allowNegative: true,
-  });
+  const netIncomeQB = parseNumberField(formData.get("net_income_qb"), { allowNegative: true });
+  const psAddBack = parseNumberField(formData.get("ps_addback"), { allowNegative: true });
   const taxOptimizationReturn = parseNumberField(formData.get("tax_optimization_return"), {
-    allowNegative: true,
-  });
-  const uncollectible = parseNumberField(formData.get("uncollectible"), {
     allowNegative: true,
   });
   const psPayoutAddBack = parseNumberField(formData.get("ps_payout_addback"), {
     allowNegative: true,
+  });
+  const ownerSalary = parseNumberField(formData.get("owner_salary"), { allowNegative: true });
+  const uncollectible = parseNumberField(formData.get("uncollectible"), { allowNegative: true });
+
+  const shareEntries: { shareholderId: string; shares: number }[] = [];
+  const personalChargeEntries: { shareholderId: string; amount: number }[] = [];
+
+  formData.forEach((value, key) => {
+    if (key.startsWith("share_")) {
+      const shareholderId = key.replace("share_", "");
+      const shares = parseNumberField(value, { allowNegative: false });
+      shareEntries.push({ shareholderId, shares });
+    }
+    if (key.startsWith("charge_")) {
+      const shareholderId = key.replace("charge_", "");
+      const amount = parseNumberField(value, { allowNegative: false });
+      personalChargeEntries.push({ shareholderId, amount });
+    }
   });
 
   await updatePeriodValues(month, {
@@ -353,48 +361,8 @@ async function handlePeriodForm(formData: FormData) {
     uncollectible,
     psPayoutAddBack,
   });
-  await revalidateForMonth(month);
-}
-
-async function handleSharesForm(formData: FormData) {
-  "use server";
-
-  const month = (formData.get("month") as string) ?? "";
-  if (!month) {
-    redirect("/");
-  }
-
-  const entries: { shareholderId: string; shares: number }[] = [];
-  formData.forEach((value, key) => {
-    if (key.startsWith("share_")) {
-      const shareholderId = key.replace("share_", "");
-      const shares = parseNumberField(value, { allowNegative: false });
-      entries.push({ shareholderId, shares });
-    }
-  });
-
-  await upsertShareAllocations(month, entries);
-  await revalidateForMonth(month);
-}
-
-async function handlePersonalChargesForm(formData: FormData) {
-  "use server";
-
-  const month = (formData.get("month") as string) ?? "";
-  if (!month) {
-    redirect("/");
-  }
-
-  const entries: { shareholderId: string; amount: number }[] = [];
-  formData.forEach((value, key) => {
-    if (key.startsWith("charge_")) {
-      const shareholderId = key.replace("charge_", "");
-      const amount = parseNumberField(value, { allowNegative: false });
-      entries.push({ shareholderId, amount });
-    }
-  });
-
-  await upsertPersonalCharges(month, entries);
+  await upsertShareAllocations(month, shareEntries);
+  await upsertPersonalCharges(month, personalChargeEntries);
   await revalidateForMonth(month);
 }
 
@@ -415,6 +383,7 @@ export default async function MonthPage({ params }: MonthPageProps) {
   ) {
     notFound();
   }
+
   const context = await getMonthContext(params.month);
 
   const { year, month } = context;
@@ -431,108 +400,101 @@ export default async function MonthPage({ params }: MonthPageProps) {
         <div className="flex items-center gap-2">
           <a
             href={`/month/${prevMonthKey}`}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100"
           >
             ← {prevMonthKey}
           </a>
           <a
             href={`/month/${nextMonthKey}`}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100"
           >
             {nextMonthKey} →
           </a>
         </div>
       </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
+      <form action={handleSaveAll} className="space-y-8">
+        <input type="hidden" name="month" value={params.month} />
+
+        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-4">
             <h2 className="text-lg font-semibold">Period inputs</h2>
             <p className="text-sm text-slate-600">
-              QuickBooks net income with monthly adjustments (tax optimization, uncollectible, PS payouts).
+              QuickBooks net income plus adjustments. Positive PS values add back to the pool; owner salary,
+              uncollectible, and tax optimization reduce it.
             </p>
           </div>
-        </div>
-        <form action={handlePeriodForm} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <input type="hidden" name="month" value={params.month} />
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">Net income (QBO)</span>
-            <input
-              type="number"
-              name="net_income_qb"
-              step="0.01"
-              defaultValue={context.periodValues.netIncomeQB}
-              className="rounded-md border border-slate-300 px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">PS add-back</span>
-            <input
-              type="number"
-              name="ps_addback"
-              step="0.01"
-              defaultValue={context.periodValues.psAddBack}
-              className="rounded-md border border-slate-300 px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">Owner salary</span>
-            <input
-              type="number"
-              name="owner_salary"
-              step="0.01"
-              defaultValue={context.periodValues.ownerSalary}
-              className="rounded-md border border-slate-300 px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">Tax optimization return</span>
-            <input
-              type="number"
-              name="tax_optimization_return"
-              step="0.01"
-              defaultValue={context.periodValues.taxOptimizationReturn}
-              className="rounded-md border border-slate-300 px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">Uncollectible</span>
-            <input
-              type="number"
-              name="uncollectible"
-              step="0.01"
-              defaultValue={context.periodValues.uncollectible}
-              className="rounded-md border border-slate-300 px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium">PS payouts add-back</span>
-            <input
-              type="number"
-              name="ps_payout_addback"
-              step="0.01"
-              defaultValue={context.periodValues.psPayoutAddBack}
-              className="rounded-md border border-slate-300 px-3 py-2"
-            />
-          </label>
-          <div className="sm:col-span-2 lg:col-span-3">
-            <button
-              type="submit"
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-            >
-              Save period inputs
-            </button>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium">Net income (QBO)</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="net_income_qb"
+                defaultValue={context.periodValues.netIncomeQB}
+                className="rounded-md border border-slate-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium">PS add-back</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="ps_addback"
+                defaultValue={context.periodValues.psAddBack}
+                className="rounded-md border border-slate-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium">Tax optimization return</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="tax_optimization_return"
+                defaultValue={context.periodValues.taxOptimizationReturn}
+                className="rounded-md border border-slate-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium">PS payouts add-back</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="ps_payout_addback"
+                defaultValue={context.periodValues.psPayoutAddBack}
+                className="rounded-md border border-slate-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium">Owner salary</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="owner_salary"
+                defaultValue={context.periodValues.ownerSalary}
+                className="rounded-md border border-slate-300 px-3 py-2"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium">Uncollectible</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="uncollectible"
+                defaultValue={context.periodValues.uncollectible}
+                className="rounded-md border border-slate-300 px-3 py-2"
+              />
+            </label>
           </div>
-        </form>
-      </section>
+        </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold">Shares</h2>
-          <p className="text-sm text-slate-600">Monthly shares per shareholder. Defaults copy from previous month.</p>
-        </div>
-        <form action={handleSharesForm} className="space-y-3">
-          <input type="hidden" name="month" value={params.month} />
+        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold">Shares</h2>
+            <p className="text-sm text-slate-600">
+              Monthly shares per shareholder. When a new month is created we copy shares from the previous month.
+            </p>
+          </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {context.shareInputs.map((entry) => {
               const holder = context.shareholders.find((h) => h.id === entry.shareholderId);
@@ -540,10 +502,9 @@ export default async function MonthPage({ params }: MonthPageProps) {
                 <label key={entry.shareholderId} className="flex flex-col gap-1 text-sm">
                   <span className="font-medium">{holder?.name ?? entry.shareholderId}</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     name={`share_${entry.shareholderId}`}
-                    step="0.0001"
-                    min="0"
                     defaultValue={entry.shares}
                     className="rounded-md border border-slate-300 px-3 py-2"
                   />
@@ -551,22 +512,15 @@ export default async function MonthPage({ params }: MonthPageProps) {
               );
             })}
           </div>
-          <button
-            type="submit"
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-          >
-            Save shares
-          </button>
-        </form>
-      </section>
+        </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold">Personal charges</h2>
-          <p className="text-sm text-slate-600">Personal expenses per holder. Added back to pool but deducted from payout.</p>
-        </div>
-        <form action={handlePersonalChargesForm} className="space-y-3">
-          <input type="hidden" name="month" value={params.month} />
+        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold">Personal charges</h2>
+            <p className="text-sm text-slate-600">
+              Personal expenses per holder. Amounts are added back to the pool and deducted from the holder’s payout.
+            </p>
+          </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {context.personalChargeInputs.map((entry) => {
               const holder = context.shareholders.find((h) => h.id === entry.shareholderId);
@@ -574,10 +528,9 @@ export default async function MonthPage({ params }: MonthPageProps) {
                 <label key={entry.shareholderId} className="flex flex-col gap-1 text-sm">
                   <span className="font-medium">{holder?.name ?? entry.shareholderId}</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     name={`charge_${entry.shareholderId}`}
-                    step="0.01"
-                    min="0"
                     defaultValue={entry.amount}
                     className="rounded-md border border-slate-300 px-3 py-2"
                   />
@@ -585,127 +538,108 @@ export default async function MonthPage({ params }: MonthPageProps) {
               );
             })}
           </div>
+        </section>
+
+        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Calculated payouts</h2>
+              <p className="text-sm text-slate-600">
+                Based on the inputs above with zero floor and carry-forward of deficits.
+              </p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50">
+                  <th className="px-3 py-2 text-left font-medium text-slate-600">Shareholder</th>
+                  <th className="px-3 py-2 text-right font-medium text-slate-600">Shares</th>
+                  <th className="px-3 py-2 text-right font-medium text-slate-600">Share %</th>
+                  <th className="px-3 py-2 text-right font-medium text-slate-600">Pre-share</th>
+                  <th className="px-3 py-2 text-right font-medium text-slate-600">Personal</th>
+                  <th className="px-3 py-2 text-right font-medium text-slate-600">Carry-in</th>
+                  <th className="px-3 py-2 text-right font-medium text-slate-600">Payout</th>
+                  <th className="px-3 py-2 text-right font-medium text-slate-600">Carry-out</th>
+                </tr>
+              </thead>
+              <tbody>
+                {context.calculation.rows.map((row) => {
+                  const holder = context.shareholders.find((h) => h.id === row.shareholderId);
+                  return (
+                    <tr key={row.shareholderId} className="border-b border-slate-100">
+                      <td className="px-3 py-2 font-medium text-slate-700">
+                        {holder?.name ?? row.shareholderId}
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-700">
+                        {numberFormatter.format(row.shares)}
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-700">
+                        {(row.shareRatio * 100).toFixed(2)}%
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-700">
+                        {currencyFormatter.format(row.preShare)}
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-700">
+                        {currencyFormatter.format(row.personalCharge)}
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-700">
+                        {currencyFormatter.format(row.carryForwardIn)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-semibold text-slate-900">
+                        {currencyFormatter.format(row.payoutRounded)}
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-700">
+                        {currencyFormatter.format(row.carryForwardOut)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-slate-200 bg-slate-50">
+                  <td className="px-3 py-2 text-left font-semibold text-slate-700">Totals</td>
+                  <td className="px-3 py-2 text-right font-semibold text-slate-700">
+                    {numberFormatter.format(context.calculation.totalShares)}
+                  </td>
+                  <td className="px-3 py-2 text-right text-slate-700">
+                    {context.calculation.totalShares > 0 ? "100%" : "—"}
+                  </td>
+                  <td className="px-3 py-2 text-right font-semibold text-slate-700">
+                    {currencyFormatter.format(context.calculation.adjustedPool)}
+                  </td>
+                  <td className="px-3 py-2 text-right font-semibold text-slate-700">
+                    {currencyFormatter.format(context.calculation.personalAddBackTotal)}
+                  </td>
+                  <td className="px-3 py-2 text-right text-slate-700">—</td>
+                  <td className="px-3 py-2 text-right font-semibold text-slate-900">
+                    {currencyFormatter.format(context.calculation.actualRoundedTotal)}
+                  </td>
+                  <td className="px-3 py-2 text-right font-semibold text-slate-700">
+                    {currencyFormatter.format(
+                      context.calculation.rows.reduce((acc, row) => acc + row.carryForwardOut, 0),
+                    )}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-3 py-2 text-left text-sm text-slate-500" colSpan={8}>
+                    Rounding delta applied: {currencyFormatter.format(context.calculation.roundingDelta)}.
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+
+        <div className="flex justify-end">
           <button
             type="submit"
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+            className="inline-flex items-center rounded-md bg-slate-900 px-6 py-2 text-base font-semibold text-white transition hover:bg-slate-700"
           >
-            Save personal charges
+            Save changes
           </button>
-        </form>
-      </section>
-
-      <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Calculated payouts</h2>
-            <p className="text-sm text-slate-600">
-              Based on inputs above with zero floor and carry-forward of deficits.
-            </p>
-          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="px-3 py-2 text-left font-medium text-slate-600">Shareholder</th>
-                <th className="px-3 py-2 text-right font-medium text-slate-600">Shares</th>
-                <th className="px-3 py-2 text-right font-medium text-slate-600">Share %</th>
-                <th className="px-3 py-2 text-right font-medium text-slate-600">Pre-share</th>
-                <th className="px-3 py-2 text-right font-medium text-slate-600">Personal</th>
-                <th className="px-3 py-2 text-right font-medium text-slate-600">Carry-in</th>
-                <th className="px-3 py-2 text-right font-medium text-slate-600">Payout</th>
-                <th className="px-3 py-2 text-right font-medium text-slate-600">Carry-out</th>
-              </tr>
-            </thead>
-            <tbody>
-              {context.calculation.rows.map((row) => {
-                const holder = context.shareholders.find((h) => h.id === row.shareholderId);
-                return (
-                  <tr key={row.shareholderId} className="border-b border-slate-100">
-                    <td className="px-3 py-2 font-medium text-slate-700">{holder?.name ?? row.shareholderId}</td>
-                    <td className="px-3 py-2 text-right text-slate-700">{numberFormatter.format(row.shares)}</td>
-                    <td className="px-3 py-2 text-right text-slate-700">
-                      {(row.shareRatio * 100).toFixed(2)}%
-                    </td>
-                    <td className="px-3 py-2 text-right text-slate-700">
-                      {currencyFormatter.format(row.preShare)}
-                    </td>
-                    <td className="px-3 py-2 text-right text-slate-700">
-                      {currencyFormatter.format(row.personalCharge)}
-                    </td>
-                    <td className="px-3 py-2 text-right text-slate-700">
-                      {currencyFormatter.format(row.carryForwardIn)}
-                    </td>
-                    <td className="px-3 py-2 text-right font-semibold text-slate-900">
-                      {currencyFormatter.format(row.payoutRounded)}
-                    </td>
-                    <td className="px-3 py-2 text-right text-slate-700">
-                      {currencyFormatter.format(row.carryForwardOut)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr className="border-t border-slate-200 bg-slate-50">
-                <td className="px-3 py-2 text-left font-semibold text-slate-700">Totals</td>
-                <td className="px-3 py-2 text-right font-semibold text-slate-700">
-                  {numberFormatter.format(context.calculation.totalShares)}
-                </td>
-                <td className="px-3 py-2 text-right text-slate-700">
-                  {context.calculation.totalShares > 0 ? "100%" : "—"}
-                </td>
-                <td className="px-3 py-2 text-right font-semibold text-slate-700">
-                  {currencyFormatter.format(context.calculation.adjustedPool)}
-                </td>
-                <td className="px-3 py-2 text-right font-semibold text-slate-700">
-                  {currencyFormatter.format(context.calculation.personalAddBackTotal)}
-                </td>
-                <td className="px-3 py-2 text-right text-slate-700">—</td>
-                <td className="px-3 py-2 text-right font-semibold text-slate-900">
-                  {currencyFormatter.format(context.calculation.actualRoundedTotal)}
-                </td>
-                <td className="px-3 py-2 text-right font-semibold text-slate-700">
-                  {currencyFormatter.format(
-                    context.calculation.rows.reduce((acc, row) => acc + row.carryForwardOut, 0),
-                  )}
-                </td>
-              </tr>
-              <tr>
-                <td className="px-3 py-2 text-left text-sm text-slate-500" colSpan={8}>
-                  Rounding delta applied: {currencyFormatter.format(context.calculation.roundingDelta)}.
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        <div className="mt-4 grid gap-1 text-xs text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
-          <span>
-            Net income: {currencyFormatter.format(context.periodValues.netIncomeQB)}
-          </span>
-          <span>
-            PS add-back: {currencyFormatter.format(context.periodValues.psAddBack)}
-          </span>
-          <span>
-            Tax optimization return: {currencyFormatter.format(-context.periodValues.taxOptimizationReturn)}
-          </span>
-          <span>
-            PS payouts add-back: {currencyFormatter.format(context.periodValues.psPayoutAddBack)}
-          </span>
-          <span>
-            Owner salary: {currencyFormatter.format(-context.periodValues.ownerSalary)}
-          </span>
-          <span>
-            Uncollectible: {currencyFormatter.format(-context.periodValues.uncollectible)}
-          </span>
-          <span>
-            Personal add-back total: {currencyFormatter.format(context.calculation.personalAddBackTotal)}
-          </span>
-          <span>
-            Adjusted pool: {currencyFormatter.format(context.calculation.adjustedPool)}
-          </span>
-        </div>
-      </section>
+      </form>
     </div>
   );
 }
