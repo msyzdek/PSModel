@@ -14,7 +14,6 @@ import { useRouter } from "next/navigation";
 import type { MonthSummary, SimplifiedShareholder } from "./page";
 import { formatYearMonth } from "@/lib/date";
 
-import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
