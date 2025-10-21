@@ -7,6 +7,7 @@ import { calculatePeriod } from "@/lib/calculation";
 import { formatYearMonth, MONTH_NAMES, parseYearMonth } from "@/lib/date";
 import YearGrid from "./year-grid";
 import SavedMonthBanner from "./saved-month-banner";
+import ImportedYearBanner from "./imported-year-banner";
 
 export type SimplifiedShareholder = Pick<Shareholder, "id" | "name">;
 
@@ -163,6 +164,7 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
   const overview = await getYearOverview(parsedYear);
 
   const savedMonthParam = typeof resolvedSearchParams.savedMonth === "string" ? resolvedSearchParams.savedMonth : undefined;
+  const importedYearParam = typeof resolvedSearchParams.importedYear === "string" ? resolvedSearchParams.importedYear : undefined;
   let savedMonthLabel: string | null = null;
   if (savedMonthParam) {
     try {
@@ -191,7 +193,7 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
           <div className="flex flex-col items-stretch gap-3 sm:flex-row">
             <Link
               href={`/api/qbo/connect?year=${parsedYear}`}
-              className="inline-flex items-center justify-center rounded-full bg-white/15 px-6 py-3 text-sm font-semibold text-white shadow-lg ring-1 ring-white/25 transition hover:bg-white/25"
+              className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-[var(--brand-primary)] shadow-lg transition hover:bg-white/90"
             >
               Import From QuickBooks
             </Link>
@@ -206,6 +208,9 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
       </section>
       {savedMonthLabel ? (
         <SavedMonthBanner savedMonth={savedMonthParam ?? null} label={savedMonthLabel} />
+      ) : null}
+      {importedYearParam ? (
+        <ImportedYearBanner importedYear={importedYearParam ?? null} />
       ) : null}
       <YearGrid
         year={parsedYear}

@@ -95,14 +95,10 @@ export async function GET(req: NextRequest) {
       results.push({ month, netIncomeQB: amount, created: !existing });
     }
 
-    return NextResponse.json({
-      ok: true,
-      realmId,
-      year: state.year,
-      isFirstYearImport,
-      baseOwnerSalaryApplied: isFirstYearImport ? baseOwnerSalary : null,
-      months: results,
-    });
+    // Redirect back to the year page with a success indicator for a banner
+    const redirectTo = new URL(`${req.nextUrl.origin}/year/${state.year}`);
+    redirectTo.searchParams.set("importedYear", String(state.year));
+    return NextResponse.redirect(redirectTo);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
