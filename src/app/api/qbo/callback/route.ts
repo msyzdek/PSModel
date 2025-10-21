@@ -62,18 +62,47 @@ export async function GET(req: NextRequest) {
     // Parse Net Income by month and upsert into Period
     const monthly = parseMonthlyNetIncome(report, state.year);
 
+    // Determine if this is the first import for the target year
+    const yearPrefix = `${state.year}-`;
+    const existingCountForYear = await prisma.period.count({
+      where: { month: { startsWith: yearPrefix } },
+    });
+    const isFirstYearImport = existingCountForYear === 0;
+
+    // Base owner salary: December of previous year, else default 30000 (per month)
+    const prevDecMonth = `${state.year - 1}-12`;
+    const prevDec = await prisma.period.findUnique({
+      where: { month: prevDecMonth },
+      select: { ownerSalary: true },
+    });
+    const baseOwnerSalary = prevDec?.ownerSalary
+      ? prevDec.ownerSalary.toString()
+      : "30000";
+
     const results: { month: string; netIncomeQB: string; created: boolean }[] = [];
     for (const [month, amount] of Object.entries(monthly)) {
       const existing = await prisma.period.findUnique({ where: { month }, select: { id: true } });
       await prisma.period.upsert({
         where: { month },
         update: { netIncomeQB: amount },
-        create: { month, netIncomeQB: amount, psAddBack: "0", ownerSalary: "0" },
+        create: {
+          month,
+          netIncomeQB: amount,
+          psAddBack: "0",
+          ownerSalary: baseOwnerSalary,
+        },
       });
       results.push({ month, netIncomeQB: amount, created: !existing });
     }
 
-    return NextResponse.json({ ok: true, realmId, year: state.year, months: results });
+    return NextResponse.json({
+      ok: true,
+      realmId,
+      year: state.year,
+      isFirstYearImport,
+      baseOwnerSalaryApplied: isFirstYearImport ? baseOwnerSalary : null,
+      months: results,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
