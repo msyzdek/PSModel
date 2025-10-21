@@ -132,18 +132,28 @@ async function getYearOverview(year: number): Promise<YearOverviewData> {
 
 interface YearPageProps {
   params: { year: string };
+  searchParams?: { saved?: string };
 }
 
-export default async function YearPage({ params }: YearPageProps) {
+export default async function YearPage({ params, searchParams }: YearPageProps) {
   const parsedYear = Number(params.year);
   if (Number.isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
     notFound();
   }
 
   const overview = await getYearOverview(parsedYear);
+  const savedMonth = searchParams?.saved ?? null;
 
   return (
     <div className="space-y-6">
+      {savedMonth && (
+        <div
+          className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+          role="status"
+        >
+          Saved changes for {savedMonth}.
+        </div>
+      )}
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">{parsedYear} Profit Share</h1>
         <p className="text-sm text-slate-600">
@@ -155,6 +165,7 @@ export default async function YearPage({ params }: YearPageProps) {
         shareholders={overview.shareholders}
         months={overview.months}
         monthNames={MONTH_NAMES}
+        highlightMonth={savedMonth ?? undefined}
       />
     </div>
   );

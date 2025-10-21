@@ -364,6 +364,8 @@ async function handleSaveAll(formData: FormData) {
   await upsertShareAllocations(month, shareEntries);
   await upsertPersonalCharges(month, personalChargeEntries);
   await revalidateForMonth(month);
+  const { year } = parseYearMonth(month);
+  redirect(`/year/${year}?saved=${month}`);
 }
 
 interface MonthPageProps {
@@ -634,7 +636,7 @@ export default async function MonthPage({ params }: MonthPageProps) {
         <div className="flex justify-end">
           <button
             type="submit"
-            className="inline-flex items-center rounded-md bg-slate-900 px-6 py-2 text-base font-semibold text-white transition hover:bg-slate-700"
+            className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
           >
             Save changes
           </button>

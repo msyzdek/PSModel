@@ -49,6 +49,7 @@ interface YearGridProps {
   shareholders: SimplifiedShareholder[];
   months: MonthSummary[];
   monthNames: string[];
+  highlightMonth?: string;
 }
 
 const buildMonthFields = (months: MonthSummary[], monthNames: string[]): MonthField[] =>
@@ -63,6 +64,7 @@ export default function YearGrid({
   shareholders,
   months,
   monthNames,
+  highlightMonth,
 }: YearGridProps) {
   const router = useRouter();
   const monthFields = useMemo(() => buildMonthFields(months, monthNames), [months, monthNames]);
@@ -71,6 +73,13 @@ export default function YearGrid({
     months.forEach((month) => map.set(month.month, month));
     return map;
   }, [months]);
+  const highlightField = useMemo(() => {
+    if (!highlightMonth) return null;
+    const parts = highlightMonth.split("-");
+    if (parts.length !== 2) return null;
+    const mm = parts[1];
+    return `m${mm}`;
+  }, [highlightMonth]);
 
   const pinnedTopRowData: GridRow[] = useMemo(() => {
     const buildRow = (
@@ -202,7 +211,10 @@ export default function YearGrid({
       type: "numericColumn",
       valueFormatter: (params: ValueFormatterParams) =>
         formatCurrency(params.value as number | null | undefined),
-      cellClass: "text-right cursor-pointer",
+      cellClass: () =>
+        field === highlightField
+          ? "text-right cursor-pointer bg-emerald-50 font-semibold text-emerald-700"
+          : "text-right cursor-pointer",
       width: 120,
       colId: `month-${monthNumber}`,
     }));
@@ -218,7 +230,7 @@ export default function YearGrid({
     };
 
     return [...baseCols, ...monthCols, totalCol];
-  }, [monthFields]);
+  }, [monthFields, highlightField]);
 
   const defaultColDef = useMemo<ColDef>(
     () => ({
