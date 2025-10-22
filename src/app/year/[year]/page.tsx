@@ -161,6 +161,7 @@ export default async function YearPage({ params, searchParams }: YearPageProps) 
     notFound();
   }
 
+
   const overview = await getYearOverview(parsedYear);
 
   const savedMonthParam = typeof resolvedSearchParams.savedMonth === "string" ? resolvedSearchParams.savedMonth : undefined;

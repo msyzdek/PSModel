@@ -53,12 +53,81 @@ npm run dev
 
 The app runs on [http://localhost:3000](http://localhost:3000).
 
+## Authentication (Google SSO)
+
+This app uses Auth.js (NextAuth) with Google OAuth.
+
+### Environment variables
+
+Add these to your `.env` (do not commit real values):
+
+```
+# Required
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+AUTH_SECRET= # generate with: openssl rand -base64 32
+
+# Optional (recommended in dev)
+NEXTAUTH_URL=http://localhost:3000
+AUTH_TRUST_HOST=true
+
+# Optional policy
+AUTH_ALLOWED_DOMAIN=yourcompany.com
+AUTH_ALLOWED_EMAILS=alice@yourcompany.com,bob@yourcompany.com
+```
+
+### Google Cloud setup
+
+1) Open Google Cloud Console → APIs & Services → OAuth consent screen.
+   - User Type: Internal (project must be under your Workspace organization).
+   - Scopes: keep defaults (openid, email, profile).
+2) Credentials → Create credentials → OAuth client ID → Web application.
+   - Authorized redirect URIs:
+     - Dev: `http://localhost:3000/api/auth/callback/google`
+     - Prod: `https://YOUR_DOMAIN/api/auth/callback/google`
+   - Copy the Client ID and Client Secret into `.env`.
+
+### Test locally
+
+```
+npm run dev
+```
+
+- Open `/signin` and click “Continue with Google”.
+- If not signed in, any protected route (e.g., `/year/2025`) redirects to `/signin`.
+
+### Authorization policy
+
+- Allowed if the email ends with `@AUTH_ALLOWED_DOMAIN`, OR is listed in `AUTH_ALLOWED_EMAILS`.
+- Shareholder records are not required for access. If present, the user session includes `shareholderId`.
+
+### Troubleshooting
+
+- redirect_uri_mismatch: Update the OAuth client’s “Authorized redirect URIs” to match your environment.
+- [next-auth][error][CLIENT_FETCH_ERROR] Failed to fetch /api/auth/providers:
+  - Ensure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET` are set.
+  - In dev, set `NEXTAUTH_URL` or `AUTH_TRUST_HOST=true` and restart.
+  - Check `/api/auth/providers` and `/api/auth/session` in the browser; they should return JSON.
+- AccessDenied after sign-in: The account doesn’t match your domain/allowlist.
+- 404 at /auth/signin: The sign-in route is `/signin`.
+- API calls return 401: Middleware fails closed for unauthenticated API requests by design.
+
+### Rollout flag
+
+Set `AUTH_ENABLED=false` (or `0`) to temporarily disable enforcement (useful in staging). When disabled, the middleware allows all requests and sign-in remains available for manual testing.
+
 ## Useful scripts
 
 - `npm run lint` – ESLint
 - `npm run typecheck` – TypeScript `--noEmit`
 - `npm run test` – Vitest unit tests
 - `npm run build` – Next.js production build
+
+## Testing Practices
+
+- Do not mutate `process.env` directly in tests. Use Vitest `vi.stubEnv('KEY', 'value')` within each test to set configuration. It restores automatically after each test and prevents leakage across tests/workers.
+- Avoid using real Google credentials in tests. Tests should not depend on network calls or external services.
+- Prefer narrow, unit-level tests for auth callbacks and middleware; integration/e2e sign-in can be added later with a mocked provider if needed.
 
 ## QBO Integration (Local)
 
