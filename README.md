@@ -112,9 +112,9 @@ npm run dev
 - 404 at /auth/signin: The sign-in route is `/signin`.
 - API calls return 401: Middleware fails closed for unauthenticated API requests by design.
 
-### Rollout note
+### Rollout flag
 
-If you want a gradual rollout, you can introduce a feature flag like `AUTH_ENABLED`, and conditionally enforce in `src/middleware.ts`. Currently, enforcement is unconditional once env is set up.
+Set `AUTH_ENABLED=false` (or `0`) to temporarily disable enforcement (useful in staging). When disabled, the middleware allows all requests and sign-in remains available for manual testing.
 
 ## Useful scripts
 
@@ -122,6 +122,12 @@ If you want a gradual rollout, you can introduce a feature flag like `AUTH_ENABL
 - `npm run typecheck` – TypeScript `--noEmit`
 - `npm run test` – Vitest unit tests
 - `npm run build` – Next.js production build
+
+## Testing Practices
+
+- Do not mutate `process.env` directly in tests. Use Vitest `vi.stubEnv('KEY', 'value')` within each test to set configuration. It restores automatically after each test and prevents leakage across tests/workers.
+- Avoid using real Google credentials in tests. Tests should not depend on network calls or external services.
+- Prefer narrow, unit-level tests for auth callbacks and middleware; integration/e2e sign-in can be added later with a mocked provider if needed.
 
 ## QBO Integration (Local)
 

@@ -23,6 +23,6 @@
 - [x] 3.3 Note rollout flag if using `AUTH_ENABLED`
 
 ## 4. Rollout
-- [ ] 4.1 Add optional `AUTH_ENABLED` to gate enforcement in staging
+- [x] 4.1 Add optional `AUTH_ENABLED` to gate enforcement in staging
 - [ ] 4.2 Verify allowed domain/emails configured in production
 - [ ] 4.3 Monitor logs for failed sign-ins post-deploy
