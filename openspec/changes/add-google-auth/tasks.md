@@ -18,9 +18,9 @@
 - [x] 2.5 Smoke test: sign-in success and cancel/failure handling
 
 ## 3. Documentation
-- [ ] 3.1 Update README with setup steps and env var descriptions
-- [ ] 3.2 Add troubleshooting for common misconfigurations
-- [ ] 3.3 Note rollout flag if using `AUTH_ENABLED`
+- [x] 3.1 Update README with setup steps and env var descriptions
+- [x] 3.2 Add troubleshooting for common misconfigurations
+- [x] 3.3 Note rollout flag if using `AUTH_ENABLED`
 
 ## 4. Rollout
 - [ ] 4.1 Add optional `AUTH_ENABLED` to gate enforcement in staging
