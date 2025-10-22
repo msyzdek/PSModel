@@ -18,6 +18,10 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.AUTH_SECRET });
 
   if (!token) {
+    // For API requests (non-browser), return 401 instead of redirect
+    if (pathname.startsWith("/api/") && !pathname.startsWith("/api/auth")) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
     const signInUrl = new URL("/signin", req.url);
     signInUrl.searchParams.set("callbackUrl", req.nextUrl.pathname + req.nextUrl.search);
     return NextResponse.redirect(signInUrl);
@@ -30,4 +34,3 @@ export const config = {
   // Run on all paths; handler itself skips public ones
   matcher: ["/(.*)"],
 };
-

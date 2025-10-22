@@ -11,11 +11,11 @@
 - [x] 1.10 Add type-safe session helpers for Server Components and API routes
 
 ## 2. Testing
-- [ ] 2.1 Unit test: authorization policy (domain and allowlist)
-- [ ] 2.2 Unit test: session callback merges `shareholderId` when present (non-required)
-- [ ] 2.3 Integration test: protected route redirects unauthenticated requests
-- [ ] 2.4 Integration test: API route returns 401 without session
-- [ ] 2.5 Smoke test: sign-in success and cancel/failure handling
+- [x] 2.1 Unit test: authorization policy (domain and allowlist)
+- [x] 2.2 Unit test: session callback merges `shareholderId` when present (non-required)
+- [x] 2.3 Integration test: protected route redirects unauthenticated requests
+- [x] 2.4 Integration test: API route returns 401 without session
+- [x] 2.5 Smoke test: sign-in success and cancel/failure handling
 
 ## 3. Documentation
 - [ ] 3.1 Update README with setup steps and env var descriptions
