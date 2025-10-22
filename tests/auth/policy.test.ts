@@ -1,18 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { authOptions } from "@/lib/auth";
 import type { User } from "next-auth";
 
 type SignInParams = { user: User; account: null };
 
-const originalEnv = { ...process.env };
-
 describe("Auth policy (domain and allowlist)", () => {
   beforeEach(() => {
-    process.env.AUTH_ALLOWED_DOMAIN = "example.com";
-    delete process.env.AUTH_ALLOWED_EMAILS;
-  });
-  afterEach(() => {
-    Object.assign(process.env, originalEnv);
+    vi.stubEnv("AUTH_ALLOWED_DOMAIN", "example.com");
+    vi.stubEnv("AUTH_ALLOWED_EMAILS", "");
   });
 
   it("allows email matching allowed domain", async () => {

@@ -4,6 +4,12 @@ import { getToken } from "next-auth/jwt";
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Optional rollout flag: when disabled, skip auth enforcement
+  const enabled = (process.env.AUTH_ENABLED ?? "true").toLowerCase();
+  if (enabled === "false" || enabled === "0") {
+    return NextResponse.next();
+  }
+
   // Allowlist public paths
   const publicPaths = ["/signin", "/api/auth/"];
   if (
